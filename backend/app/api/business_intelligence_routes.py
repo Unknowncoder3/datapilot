@@ -207,3 +207,29 @@ def business_insights(
         }
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from app.services.business_intelligence.anomaly_engine import detect_business_anomalies
+
+
+@router.get("/{dataset_id}/bi/anomalies")
+def business_anomalies(
+    dataset_id: int,
+    sensitivity: float = 3.5,
+    limit: int = 100,
+    min_periods: int = 14,
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {
+            "dataset_id": dataset_id,
+            **detect_business_anomalies(
+                df,
+                sensitivity=sensitivity,
+                limit=limit,
+                min_periods=min_periods,
+            ),
+        }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
