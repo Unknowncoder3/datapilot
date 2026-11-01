@@ -53,6 +53,8 @@ def test_returns_positive_and_negative_contributors_separately():
         assert analysis["results"] == (
             analysis["positive_contributors"] + analysis["negative_contributors"]
         )
+        assert all(item["contribution_percent"] > 0 for item in analysis["positive_contributors"])
+        assert all(item["contribution_percent"] < 0 for item in analysis["negative_contributors"])
 
 
 def test_reports_missing_dimension_without_failing():
