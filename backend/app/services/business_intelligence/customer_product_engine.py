@@ -26,7 +26,13 @@ def _revenue_series(df: pd.DataFrame, mapping: dict) -> pd.Series:
 def _require_column(df: pd.DataFrame, mapping: dict, role: str, label: str) -> str:
     column = mapping.get(role)
     if not isinstance(column, str) or column not in df.columns:
-        raise ValueError(f"{label} requires a mapped {role.replace('_', ' ')} column.")
+        role_label = {
+            "customer_id": "customer identifier",
+            "product_id": "product identifier",
+            "order_id": "order identifier",
+            "date": "transaction date",
+        }.get(role, role.replace("_", " "))
+        raise ValueError(f"{label} requires a mapped {role_label} column.")
     return column
 
 
