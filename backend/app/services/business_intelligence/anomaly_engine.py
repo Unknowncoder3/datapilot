@@ -27,13 +27,14 @@ def _anomaly(
     evidence: dict,
     limitations: list[str] | None = None,
 ) -> dict:
+    safe_score = float(score) if pd.notna(score) and score != float("inf") else 999.0
     return {
         "id": anomaly_id,
         "category": category,
         "title": title,
         "description": description,
         "severity": severity,
-        "score": round(float(score), 3) if pd.notna(score) else None,
+        "score": round(safe_score, 3),
         "evidence": evidence,
         "limitations": limitations or [],
         "method": "median_absolute_deviation",
