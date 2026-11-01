@@ -233,3 +233,27 @@ def business_anomalies(
         }
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from app.services.business_intelligence.driver_engine import analyze_business_drivers
+
+
+@router.get("/{dataset_id}/bi/drivers")
+def business_drivers(
+    dataset_id: int,
+    top_n: int = 10,
+    frequency: str = "month",
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {
+            "dataset_id": dataset_id,
+            **analyze_business_drivers(
+                df,
+                top_n=top_n,
+                frequency=frequency,
+            ),
+        }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
