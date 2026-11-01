@@ -7,6 +7,11 @@ from app.services.business_intelligence.column_mapper import (
     validate_business_mapping,
 )
 from app.services.business_intelligence.kpi_engine import calculate_business_kpis
+from app.services.business_intelligence.sales_engine import (
+    get_sales_trends,
+    get_sales_by_country,
+    get_top_products,
+)
 from app.api.analytics_routes import _load_dataset
 
 
@@ -55,5 +60,44 @@ def get_business_kpis(
             "dataset_id": dataset_id,
             **calculate_business_kpis(df),
         }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/{dataset_id}/bi/sales/trends")
+def sales_trends(
+    dataset_id: int,
+    frequency: str = "month",
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {"dataset_id": dataset_id, **get_sales_trends(df, frequency=frequency)}
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/{dataset_id}/bi/sales/countries")
+def sales_by_country(
+    dataset_id: int,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {"dataset_id": dataset_id, **get_sales_by_country(df, limit=limit)}
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/{dataset_id}/bi/sales/products")
+def top_selling_products(
+    dataset_id: int,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {"dataset_id": dataset_id, **get_top_products(df, limit=limit)}
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
