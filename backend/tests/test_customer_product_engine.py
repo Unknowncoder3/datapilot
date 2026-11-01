@@ -27,7 +27,9 @@ def sample_sales():
 def test_customer_intelligence_aggregates_orders_and_revenue():
     result = get_customer_intelligence(sample_sales())
     assert result["unique_customers"] == 3
-    assert result["results"][0]["customer_id"] == "102"
+    most_recent = next(item for item in result["results"] if item["customer_id"] == "103")
+    assert most_recent["recency_days"] == 0
+    assert most_recent["r_score"] == 5
     assert result["results"][0]["revenue"] == 15.0
     customer_101 = next(item for item in result["results"] if item["customer_id"] == "101")
     assert customer_101["revenue"] == 10.0
