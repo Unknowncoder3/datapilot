@@ -36,6 +36,14 @@ def _normalize_name(value: Any) -> str:
 
 def _candidate_score(column: str, role: str, series: pd.Series) -> tuple[int, str | None]:
     normalized = _normalize_name(column)
+
+    # Exclude date/time fields before alias matching. For example, InvoiceDate
+    # must not match the "invoice" prefix used by the order_id role.
+    if role in IDENTIFIER_TOKENS and any(
+        token in normalized for token in ("date", "time", "timestamp")
+    ):
+        return 0, None
+
     aliases = {_normalize_name(alias) for alias in ROLE_ALIASES[role]}
 
     if normalized in aliases:
@@ -50,9 +58,6 @@ def _candidate_score(column: str, role: str, series: pd.Series) -> tuple[int, st
     if role in NUMERIC_ROLES and pd.api.types.is_numeric_dtype(series):
         return 15, "Column is numeric; confirm its business meaning manually."
     if role in IDENTIFIER_TOKENS:
-        # Avoid treating date/time fields such as InvoiceDate as identifiers.
-        if any(token in normalized for token in ("date", "time", "timestamp")):
-            return 0, None
         if any(token in normalized for token in IDENTIFIER_TOKENS[role]):
             return 65, "Column name suggests this type of identifier."
     if role in {"product_name", "category", "country", "region"}:
