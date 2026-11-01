@@ -42,7 +42,7 @@ def test_score_breakdown_is_transparent_and_bounded():
         "evidence": {"count": 5, "period": "2025-02", "missing": None},
     }
     result = _score_recommendation(recommendation)
-    assert result["score"] == 82
+    assert result["score"] == 80
     assert result["score_breakdown"]["priority_points"] == 40
     assert result["score_breakdown"]["confidence_points"] == 17
     assert result["score_breakdown"]["evidence_points"] == 23
