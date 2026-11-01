@@ -43,7 +43,7 @@ def test_returns_candidates_and_available_columns():
 
 
 def test_ambiguous_customer_columns_are_not_guessed():
-    df = sample_retail_data().rename(columns={"CustomerID": "Customer"})
+    df = sample_retail_data()
     df["ClientID"] = [10, 11, 12]
 
     result = map_business_columns(df)
