@@ -10,3 +10,4 @@ pydantic-settings==2.10.1
 pytest==8.4.2
 httpx==0.28.1
 numpy==1.26.4
+plotly==6.3.0
