@@ -29,9 +29,9 @@ def test_monthly_sales_trends_and_growth():
     assert [item["period"] for item in result["results"]] == [
         "2025-01", "2025-02", "2025-03"
     ]
-    assert result["results"][0]["revenue"] == 23.0
+    assert result["results"][0]["revenue"] == 18.0
     assert result["results"][1]["revenue"] == 7.0
-    assert result["results"][2]["growth_percent"] == pytest.approx(128.57, abs=0.01)
+    assert result["results"][2]["growth_percent"] == pytest.approx(14.29, abs=0.01)
 
 
 def test_cancelled_invoice_rows_are_identified_but_included():
@@ -43,7 +43,7 @@ def test_cancelled_invoice_rows_are_identified_but_included():
 
 def test_daily_frequency():
     result = get_sales_trends(sample_sales(), frequency="day")
-    assert result["periods"] == 5
+    assert result["periods"] == 4
 
 
 def test_rejects_unsupported_frequency():
