@@ -44,25 +44,39 @@ def _dimension_contribution(
     comparison["contribution_percent"] = (
         comparison["change"] / total_change * 100 if total_change != 0 else 0.0
     )
-    comparison = comparison.sort_values("change", ascending=False)
-    results = []
-    for value, row in comparison.head(top_n).iterrows():
-        results.append({
-            "value": str(value),
-            "previous_revenue": round(float(row["previous_revenue"]), 2),
-            "current_revenue": round(float(row["current_revenue"]), 2),
-            "revenue_change": round(float(row["change"]), 2),
-            "contribution_percent": round(float(row["contribution_percent"]), 2),
-        })
+
+    def serialize_contributors(rows: pd.DataFrame, contributor_type: str) -> list[dict]:
+        serialized = []
+        for value, row in rows.iterrows():
+            serialized.append({
+                "value": str(value),
+                "contributor_type": contributor_type,
+                "previous_revenue": round(float(row["previous_revenue"]), 2),
+                "current_revenue": round(float(row["current_revenue"]), 2),
+                "revenue_change": round(float(row["change"]), 2),
+                "contribution_percent": round(float(row["contribution_percent"]), 2),
+            })
+        return serialized
+
+    positive = comparison[comparison["change"] > 0].sort_values("change", ascending=False).head(top_n)
+    negative = comparison[comparison["change"] < 0].sort_values("change", ascending=True).head(top_n)
+    positive_results = serialize_contributors(positive, "positive")
+    negative_results = serialize_contributors(negative, "negative")
+    # Keep the existing results key for API compatibility while exposing both sides explicitly.
+    results = positive_results + negative_results
     return {
         "dimension": label,
         "available": True,
         "total_groups": int(len(comparison)),
         "total_revenue_change": round(total_change, 2),
+        "positive_contributors": positive_results,
+        "negative_contributors": negative_results,
         "results": results,
         "notes": [
+            "Positive contributors increased revenue; negative contributors decreased revenue.",
+            "Each contributor list is independently limited by top_n.",
             "Contribution percentages are signed and can exceed 100% when groups offset one another.",
-            "Only the highest positive contributors are returned; negative contributors may also materially affect the total.",
+            "Contributions describe arithmetic changes, not causal proof.",
         ],
     }
 
