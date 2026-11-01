@@ -257,3 +257,29 @@ def business_drivers(
         }
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from app.services.business_intelligence.revenue_recommendation_engine import (
+    generate_revenue_recommendations,
+)
+
+
+@router.get("/{dataset_id}/bi/recommendations/revenue")
+def revenue_recommendations(
+    dataset_id: int,
+    negative_revenue_threshold: float = 5.0,
+    change_threshold: float = 10.0,
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {
+            "dataset_id": dataset_id,
+            **generate_revenue_recommendations(
+                df,
+                negative_revenue_threshold=negative_revenue_threshold,
+                change_threshold=change_threshold,
+            ),
+        }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
