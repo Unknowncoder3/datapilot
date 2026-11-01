@@ -283,3 +283,29 @@ def revenue_recommendations(
         }
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from app.services.business_intelligence.customer_recommendation_engine import (
+    generate_customer_recommendations,
+)
+
+
+@router.get("/{dataset_id}/bi/recommendations/customers")
+def customer_recommendations(
+    dataset_id: int,
+    at_risk_days: int = 90,
+    recent_days: int = 30,
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {
+            "dataset_id": dataset_id,
+            **generate_customer_recommendations(
+                df,
+                at_risk_days=at_risk_days,
+                recent_days=recent_days,
+            ),
+        }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
