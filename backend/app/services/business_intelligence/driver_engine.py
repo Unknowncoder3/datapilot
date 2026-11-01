@@ -146,6 +146,8 @@ def analyze_business_drivers(
     if (
         isinstance(quantity_col, str) and quantity_col in df.columns
         and isinstance(price_col, str) and price_col in df.columns
+        and isinstance(resolved.get("revenue"), dict)
+        and resolved["revenue"].get("type") == "derived"
     ):
         q = pd.to_numeric(df[quantity_col], errors="coerce")
         p = pd.to_numeric(df[price_col], errors="coerce")
@@ -197,7 +199,7 @@ def analyze_business_drivers(
     else:
         result["drivers"]["price_volume"] = {
             "available": False,
-            "reason": "Mapped quantity and unit-price fields are both required.",
+            "reason": "Price-volume decomposition requires mapped quantity, unit price, and revenue derived from quantity × unit price.",
         }
         result["unavailable_analyses"].append("price_volume")
 
