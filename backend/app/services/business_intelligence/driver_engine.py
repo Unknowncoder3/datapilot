@@ -42,7 +42,7 @@ def _dimension_contribution(
     comparison["change"] = comparison["current_revenue"] - comparison["previous_revenue"]
     total_change = float(comparison["change"].sum())
     comparison["contribution_percent"] = (
-        comparison["change"] / total_change * 100 if total_change != 0 else 0.0
+        comparison["change"] / abs(total_change) * 100 if total_change != 0 else 0.0
     )
 
     def serialize_contributors(rows: pd.DataFrame, contributor_type: str) -> list[dict]:
