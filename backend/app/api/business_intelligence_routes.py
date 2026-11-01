@@ -189,3 +189,21 @@ def run_business_query(
         }
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+from app.services.business_intelligence.insight_engine import generate_business_insights
+
+
+@router.get("/{dataset_id}/bi/insights")
+def business_insights(
+    dataset_id: int,
+    top_n: int = 5,
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {
+            "dataset_id": dataset_id,
+            **generate_business_insights(df, top_n=top_n),
+        }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
