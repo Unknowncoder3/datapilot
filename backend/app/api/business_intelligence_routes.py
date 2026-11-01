@@ -17,6 +17,7 @@ from app.services.business_intelligence.customer_product_engine import (
     get_customer_rfm,
     get_product_intelligence,
 )
+from app.services.business_intelligence.query_engine import run_safe_analytics_query
 from app.api.analytics_routes import _load_dataset
 
 
@@ -147,6 +148,44 @@ def product_intelligence(
         return {
             "dataset_id": dataset_id,
             **get_product_intelligence(df, limit=limit),
+        }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+
+@router.post("/{dataset_id}/bi/query")
+def run_business_query(
+    dataset_id: int,
+    query: dict = Body(
+        ...,
+        description="Validated query with columns, filters, group_by, aggregations, sorting, and pagination.",
+        example={
+            "filters": [{"column": "Country", "operator": "eq", "value": "United Kingdom"}],
+            "group_by": ["Country"],
+            "aggregations": [{"column": "Quantity", "aggregation": "sum", "alias": "units_sold"}],
+            "sort_by": "units_sold",
+            "sort_order": "desc",
+            "limit": 20,
+            "offset": 0,
+        },
+    ),
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        if not isinstance(query, dict):
+            raise ValueError("Query body must be a JSON object.")
+        allowed = {
+            "columns", "filters", "group_by", "aggregations",
+            "sort_by", "sort_order", "limit", "offset",
+        }
+        unknown = set(query) - allowed
+        if unknown:
+            raise ValueError(f"Unsupported query properties: {sorted(unknown)}.")
+        return {
+            "dataset_id": dataset_id,
+            **run_safe_analytics_query(df, **query),
         }
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
