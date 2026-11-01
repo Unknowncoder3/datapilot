@@ -12,6 +12,11 @@ from app.services.business_intelligence.sales_engine import (
     get_sales_by_country,
     get_top_products,
 )
+from app.services.business_intelligence.customer_product_engine import (
+    get_customer_intelligence,
+    get_customer_rfm,
+    get_product_intelligence,
+)
 from app.api.analytics_routes import _load_dataset
 
 
@@ -99,5 +104,49 @@ def top_selling_products(
     df = _load_dataset(dataset_id, db)
     try:
         return {"dataset_id": dataset_id, **get_top_products(df, limit=limit)}
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/{dataset_id}/bi/customers")
+def customer_intelligence(
+    dataset_id: int,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {
+            "dataset_id": dataset_id,
+            **get_customer_intelligence(df, limit=limit),
+        }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/{dataset_id}/bi/customers/rfm")
+def customer_rfm(
+    dataset_id: int,
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {"dataset_id": dataset_id, **get_customer_rfm(df)}
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@router.get("/{dataset_id}/bi/products")
+def product_intelligence(
+    dataset_id: int,
+    limit: int = 20,
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {
+            "dataset_id": dataset_id,
+            **get_product_intelligence(df, limit=limit),
+        }
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
