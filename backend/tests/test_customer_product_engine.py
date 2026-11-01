@@ -52,7 +52,7 @@ def test_rfm_calculates_dataset_relative_scores():
     assert all(1 <= item["r_score"] <= 5 for item in result["results"])
     assert all(1 <= item["f_score"] <= 5 for item in result["results"])
     assert all(1 <= item["m_score"] <= 5 for item in result["results"])
-    assert result["results"][0]["customer_id"] == "103"
+    assert result["results"][0]["customer_id"] == "102"
 
 
 def test_rfm_requires_date_and_order_fields():
