@@ -23,6 +23,11 @@ ROLE_ALIASES = {
 }
 
 NUMERIC_ROLES = {"quantity", "unit_price", "revenue", "cost", "profit"}
+IDENTIFIER_TOKENS = {
+    "customer_id": ("customer", "client", "buyer", "user"),
+    "order_id": ("order", "invoice", "transaction", "receipt", "purchase"),
+    "product_id": ("product", "item", "sku", "stock", "variant"),
+}
 
 
 def _normalize_name(value: Any) -> str:
@@ -44,9 +49,9 @@ def _candidate_score(column: str, role: str, series: pd.Series) -> tuple[int, st
         return 70, "Column has a datetime data type."
     if role in NUMERIC_ROLES and pd.api.types.is_numeric_dtype(series):
         return 15, "Column is numeric; confirm its business meaning manually."
-    if role in {"customer_id", "order_id", "product_id"}:
-        if any(token in normalized for token in ("customer", "client", "buyer", "order", "invoice", "transaction", "sku", "stock")):
-            return 65, "Column name suggests an identifier."
+    if role in IDENTIFIER_TOKENS:
+        if any(token in normalized for token in IDENTIFIER_TOKENS[role]):
+            return 65, "Column name suggests this type of identifier."
     if role in {"product_name", "category", "country", "region"}:
         if role == "region" and normalized in {"state", "province", "city", "territory", "market"}:
             return 80, "Column name suggests a geographic grouping."
