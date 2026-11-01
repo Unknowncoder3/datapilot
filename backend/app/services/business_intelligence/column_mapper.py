@@ -50,6 +50,9 @@ def _candidate_score(column: str, role: str, series: pd.Series) -> tuple[int, st
     if role in NUMERIC_ROLES and pd.api.types.is_numeric_dtype(series):
         return 15, "Column is numeric; confirm its business meaning manually."
     if role in IDENTIFIER_TOKENS:
+        # Avoid treating date/time fields such as InvoiceDate as identifiers.
+        if any(token in normalized for token in ("date", "time", "timestamp")):
+            return 0, None
         if any(token in normalized for token in IDENTIFIER_TOKENS[role]):
             return 65, "Column name suggests this type of identifier."
     if role in {"product_name", "category", "country", "region"}:
