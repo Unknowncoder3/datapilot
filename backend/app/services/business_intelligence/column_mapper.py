@@ -50,6 +50,10 @@ def _candidate_score(column: str, role: str, series: pd.Series) -> tuple[int, st
         return 100, "Column name exactly matches a known business field."
 
     for alias in aliases:
+        # "count" is an exact-only alias: fuzzy matching it would make
+        # unrelated names such as "Country" look like quantity fields.
+        if alias == "count":
+            continue
         if alias and (normalized.startswith(alias) or normalized.endswith(alias)):
             return 85, "Column name contains a known business-field name."
 
