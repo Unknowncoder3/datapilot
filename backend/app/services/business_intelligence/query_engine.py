@@ -41,9 +41,11 @@ def run_safe_analytics_query(
     if not all(isinstance(items, list) for items in (columns, filters, group_by, aggregations)):
         raise ValueError("Columns, filters, group_by, and aggregations must be lists.")
 
+    if not all(isinstance(column, str) for column in columns + group_by):
+        raise ValueError("Selected and group-by columns must be strings.")
     requested_columns = list(dict.fromkeys(columns + group_by))
     for column in requested_columns:
-        if not isinstance(column, str) or column not in df.columns:
+        if column not in df.columns:
             raise ValueError(f"Unknown dataset column: {column!r}.")
     if len(group_by) != len(set(group_by)):
         raise ValueError("Group-by columns must not contain duplicates.")
