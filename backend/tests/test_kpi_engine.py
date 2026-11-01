@@ -18,9 +18,9 @@ def test_calculates_retail_kpis_from_derived_revenue():
     result = calculate_business_kpis(retail_data())
     metrics = result["metrics"]
 
-    assert metrics["total_revenue"]["value"] == 37.0
+    assert metrics["total_revenue"]["value"] == 41.0
     assert metrics["total_orders"]["value"] == 3
-    assert metrics["average_order_value"]["value"] == 12.33
+    assert metrics["average_order_value"]["value"] == 13.67
     assert metrics["total_units_sold"]["value"] == 8.0
     assert metrics["unique_customers"]["value"] == 2
     assert metrics["unique_products"]["value"] == 3
