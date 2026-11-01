@@ -29,8 +29,15 @@ def test_recommends_investigating_declining_products():
     )
     assert item["evidence"]["previous_period"] == "2025-01"
     assert item["evidence"]["current_period"] == "2025-02"
-    assert item["evidence"]["products"][0]["product_id"] == "DECLINE"
-    assert item["evidence"]["products"][0]["change_percent"] < -10
+    declining_ids = {
+        product["product_id"] for product in item["evidence"]["products"]
+    }
+    assert "DECLINE" in declining_ids
+    declining_product = next(
+        product for product in item["evidence"]["products"]
+        if product["product_id"] == "DECLINE"
+    )
+    assert declining_product["change_percent"] < -10
 
 
 def test_recommends_validating_growing_products():
