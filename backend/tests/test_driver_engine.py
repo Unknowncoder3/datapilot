@@ -40,6 +40,21 @@ def test_returns_customer_product_and_geography_contributions():
     assert result["drivers"]["customer"]["total_groups"] == 3
 
 
+def test_returns_positive_and_negative_contributors_separately():
+    df = driver_data()
+    df.loc[5, "Quantity"] = -10
+    result = analyze_business_drivers(df)
+    for dimension in ("customer", "product", "geography"):
+        analysis = result["drivers"][dimension]
+        assert analysis["positive_contributors"]
+        assert analysis["negative_contributors"]
+        assert all(item["contributor_type"] == "positive" for item in analysis["positive_contributors"])
+        assert all(item["contributor_type"] == "negative" for item in analysis["negative_contributors"])
+        assert analysis["results"] == (
+            analysis["positive_contributors"] + analysis["negative_contributors"]
+        )
+
+
 def test_reports_missing_dimension_without_failing():
     df = driver_data().drop(columns=["CustomerID"])
     result = analyze_business_drivers(df)
