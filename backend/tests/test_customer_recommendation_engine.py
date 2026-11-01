@@ -9,7 +9,7 @@ from app.services.business_intelligence.customer_recommendation_engine import (
 def customer_data():
     rows = []
     # High-value customer who became inactive well before the dataset reference date.
-    for i, date in enumerate(["2025-01-01", "2025-01-10", "2025-01-20", "2025-02-01"]):
+    for i, date in enumerate(["2024-10-01", "2024-10-10", "2024-10-20", "2024-11-01"]):
         rows.append((f"OLD{i}", "C_OLD", date, 10, 100.0))
     # Recently frequent customer.
     for i, date in enumerate(["2025-05-01", "2025-05-10", "2025-05-20", "2025-05-29"]):
