@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { deleteDataset, getDatasets, getHealth, getPreview, getProfile, uploadDataset } from "./api.js";
+import ExecutiveDashboard from "./ExecutiveDashboard.jsx";
 
 const number = (value) => Number(value || 0).toLocaleString("en-IN");
 const prettyDate = (value) => value ? new Date(value).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—";
@@ -94,7 +95,7 @@ function App() {
         <a className="brand" href="#" onClick={() => setSection("Overview")}><span className="brand-mark">D</span><span>DataPilot<span className="brand-ai"> AI</span><small>INTELLIGENCE WORKSPACE</small></span></a>
         <div className="workspace-label">WORKSPACE</div>
         <nav className="nav flex-column">
-          {[["Overview","◫"],["Datasets","▤"],["Analytics","▥"]].map(([label, icon]) =>
+          {[["Overview","◫"],["Datasets","▤"],["Analytics","▥"],["Executive BI","✦"]].map(([label, icon]) =>
             <button key={label} className={`nav-link ${section === label ? "active" : ""}`} onClick={() => setSection(label)}><span>{icon}</span>{label}</button>
           )}
         </nav>
@@ -132,6 +133,8 @@ function App() {
             </div>
           </>}
 
+          {section === "Executive BI" && <ExecutiveDashboard dataset={selected} />}
+
           {section === "Datasets" && <>
             <div className="page-heading"><div><div className="eyebrow">DATA MANAGEMENT</div><h1>Your datasets</h1><p>Upload, organize and inspect your data sources.</p></div><button className="primary-button" onClick={() => fileRef.current?.click()}>＋ Upload dataset</button></div>
             <div className="search-row"><input className="form-control search-input" placeholder="Search datasets…" value={query} onChange={(e) => setQuery(e.target.value)}/><span>{filtered.length} dataset{filtered.length === 1 ? "" : "s"}</span></div>
@@ -147,7 +150,7 @@ function App() {
               <div className="panel-card table-panel"><div className="section-heading inner-heading"><div><h3>Data preview</h3><p>First records from your uploaded file</p></div><span className="subtle-count">Preview</span></div><div className="table-responsive"><table className="table data-table"><thead><tr>{headers.map((h) => <th key={h}>{h}</th>)}</tr></thead><tbody>{rows.slice(0,8).map((row, i) => <tr key={i}>{headers.map((h) => <td key={h}>{String(row[h] ?? "—")}</td>)}</tr>)}</tbody></table>{!rows.length && <div className="empty-inline">Preview data is not available.</div>}</div></div>
             </>}
           </>}
-          <footer className="footer-note">DataPilot AI <span>·</span> Your autonomous BI workspace <span>·</span> Phase 1</footer>
+          <footer className="footer-note">DataPilot AI <span>·</span> Your autonomous BI workspace <span>·</span> Phase 5.2</footer>
         </div>
       </main>
     </div>
