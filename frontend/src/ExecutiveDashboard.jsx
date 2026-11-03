@@ -109,7 +109,7 @@ export default function ExecutiveDashboard({ dataset }) {
       ...(dashboard?.customer_segments || []).map((item) => ({ section: "Customer segment", category: item.segment, value: item.revenue })),
     ];
     const quote = (value) => `"${String(value ?? "").replaceAll("\"", "\"\"")}"`;
-    const csv = ["Section,Category,Value", ...rows.map((row) => [row.section, row.category, row.value].map(quote).join(","))].join("\\r\\n");
+    const csv = ["Section,Category,Value", ...rows.map((row) => [row.section, row.category, row.value].map(quote).join(","))].join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob); const link = document.createElement("a");
     link.href = url; link.download = `${(dataset.name || "datapilot-dashboard").replace(/[^a-z0-9-_]/gi, "-")}-filtered.csv`;
