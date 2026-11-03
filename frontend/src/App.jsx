@@ -24,9 +24,42 @@ function DownloadExport({ dataset, profile, preview, dashboardExportData, onPdfE
   };
   const downloadPng = () => {
     const data = dashboardExportData;
-    if (!data) { window.alert("Open Executive BI once so the dashboard charts can load before exporting."); return; }
-    const canvas = document.createElement("canvas"); canvas.width = 1600; canvas.height = 900;
+    if (!data) { window.alert("Dashboard data is still loading. Open Executive BI and wait for the visuals to finish, then try again."); return; }
+    const canvas = document.createElement("canvas");
+    canvas.width = 1600; canvas.height = 1900;
     const ctx = canvas.getContext("2d");
+    const bg = ctx.createLinearGradient(0, 0, 1600, 1900);
+    bg.addColorStop(0, "#080b15"); bg.addColorStop(1, "#111a2d");
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, 1600, 1900);
+    const text = (value, x, y, font = "16px Arial", color = "#f2f5ff") => { ctx.font = font; ctx.fillStyle = color; ctx.fillText(String(value ?? ""), x, y); };
+    const panel = (x,y,w,h) => { ctx.fillStyle="#111a2d";ctx.strokeStyle="#263650";ctx.lineWidth=2;ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h); };
+    const currency = (value) => { const n=Number(value||0), a=Math.abs(n); return a>=1e6?`£${(n/1e6).toFixed(2)}M`:a>=1e3?`£${(n/1e3).toFixed(1)}K`:n.toLocaleString("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:2}); };
+    const datasetName = dataset?.name || dataset?.original_filename || "Selected dataset";
+    ctx.fillStyle="#7889ff";ctx.fillRect(90,75,8,90);
+    text("DataPilot AI",120,125,"bold 54px Arial");
+    text("EXECUTIVE BI DASHBOARD  /  "+datasetName,120,170,"24px Arial","#8d9bb5");
+    ctx.strokeStyle="#263650";ctx.beginPath();ctx.moveTo(90,215);ctx.lineTo(1510,215);ctx.stroke();
+    const kpis=(data.kpis||[]).slice(0,5);
+    kpis.forEach((item,i)=>{const w= kpis.length===5?270:330,x=90+i*(w+12);panel(x,250,w,150);text(String(item.label||"METRIC").toUpperCase(),x+20,285,"bold 17px Arial","#e8c46e");text(item.format==="currency"?currency(item.value):Number(item.value||0).toLocaleString("en-IN"),x+20,345,"bold 32px Arial");ctx.fillStyle=["#7889ff","#46c6b6","#b99aff","#ffad55","#fa7e91"][i%5];ctx.fillRect(x+20,370,65,5);});
+    const trend=(data.monthly_revenue||[]).slice(0,16), vals=trend.map(i=>Number(i.revenue||0)), max=Math.max(1,...vals), min=Math.min(0,...vals);
+    panel(90,430,920,390);text("MONTHLY REVENUE TREND",120,475,"bold 22px Arial","#e8c46e");
+    ctx.strokeStyle="#283650";ctx.lineWidth=1;for(let y=520;y<=750;y+=46){ctx.beginPath();ctx.moveTo(120,y);ctx.lineTo(980,y);ctx.stroke();}
+    if(vals.length){ctx.strokeStyle="#d47eb4";ctx.lineWidth=5;ctx.beginPath();vals.forEach((v,i)=>{const x=130+i*(830/Math.max(1,vals.length-1)),y=750-((v-min)/Math.max(1,max-min))*210;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+      vals.forEach((v,i)=>{const x=130+i*(830/Math.max(1,vals.length-1)),y=750-((v-min)/Math.max(1,max-min))*210;ctx.fillStyle="#7889ff";ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();text(trend[i]?.period||"",x-25,785,"12px Arial","#8d9bb5");});}
+    panel(1030,430,480,390);text("REVENUE MIX BY COUNTRY",1060,475,"bold 22px Arial","#e8c46e");
+    const countries=(data.country_revenue||[]).slice(0,8), total=countries.reduce((s,i)=>s+Math.max(0,Number(i.revenue||0)),0);
+    const colors=["#7889ff","#46c6b6","#ffad55","#fa7e91","#b99aff","#5ba8ff","#e4c65a","#d47eb4"];
+    let angle=-Math.PI/2;
+    countries.forEach((item,i)=>{const v=Math.max(0,Number(item.revenue||0)), next=angle+(total?v/total*Math.PI*2:0);ctx.beginPath();ctx.moveTo(1230,610);ctx.arc(1230,610,125,angle,next);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();angle=next;});
+    ctx.beginPath();ctx.arc(1230,610,75,0,Math.PI*2);ctx.fillStyle="#111a2d";ctx.fill();
+    countries.slice(0,6).forEach((item,i)=>{ctx.fillStyle=colors[i%colors.length];ctx.fillRect(1060,755+i*16,8,8);text(String(item.country||"").slice(0,22),1075,763+i*16,"11px Arial","#dce4f6");text(currency(item.revenue),1370,763+i*16,"bold 11px Arial");});
+    const drawBars=(title,items,nameKey,y,height,accent="#46c6b6",count=8)=>{panel(90,y,1420,height);text(title,120,y+42,"bold 22px Arial","#e8c46e");const list=(items||[]).slice(0,count),maxV=Math.max(1,...list.map(i=>Number(i.revenue??i.value??0)));list.forEach((item,i)=>{const yy=y+78+i*((height-100)/Math.max(1,list.length));text(String(item[nameKey]||"").slice(0,55),120,yy+12,"13px Arial","#dce4f6");text(currency(item.revenue??item.value),520,yy+12,"bold 13px Arial");ctx.fillStyle="#202d45";ctx.fillRect(700,yy,760,10);ctx.fillStyle=accent;ctx.fillRect(700,yy,Math.max(3,760*Number(item.revenue??item.value??0)/maxV),10);});};
+    drawBars("TOP PRODUCTS BY REVENUE",data.product_revenue,"product",850,280,"#46c6b6",8);
+    drawBars("CUSTOMER SEGMENT MIX",data.customer_segments,"segment",1150,250,"#b99aff",6);
+    drawBars("QUARTERLY REVENUE",data.quarterly_revenue,"quarter",1420,210,"#7889ff",4);
+    text("Generated in DataPilot AI · "+new Date().toLocaleDateString(),90,1865,"16px Arial","#8d9bb5");
+    const link=document.createElement("a");link.download=`${safeName}-dashboard.png`;link.href=canvas.toDataURL("image/png");link.click();
+  };
     const bg = ctx.createLinearGradient(0,0,1600,900); bg.addColorStop(0,"#080b15"); bg.addColorStop(1,"#111a2d");
     ctx.fillStyle=bg;ctx.fillRect(0,0,1600,900);
     ctx.fillStyle="#7889ff";ctx.fillRect(90,90,8,80);
@@ -44,8 +77,7 @@ function DownloadExport({ dataset, profile, preview, dashboardExportData, onPdfE
     const products=(data.product_revenue||[]).slice(0,3),maxProduct=Math.max(1,...products.map((p)=>Number(p.revenue||0)));
     products.forEach((item,i)=>{const y=815+i*25;ctx.fillStyle="#8d9bb5";ctx.font="14px Arial";ctx.fillText(String(item.product||"").slice(0,48),90,y);ctx.fillStyle="#46c6b6";ctx.fillRect(600,y-12,Math.max(5,800*Number(item.revenue||0)/maxProduct),8);});
     ctx.fillStyle="#8d9bb5";ctx.font="16px Arial";ctx.fillText("Generated in DataPilot AI · "+new Date().toLocaleDateString(),90,890);
-    const link=document.createElement("a");link.download=`${safeName}-snapshot.png`;link.href=canvas.toDataURL("image/png");link.click();
-  };
+
   if (!dataset) return <div className="empty-state"><div className="empty-icon">⇩</div><h3>Select a dataset first</h3><p>Upload or select a dataset to create exports.</p></div>;
   return <section className="export-studio">
     <div className="export-hero"><div><div className="export-eyebrow"><span/> DATAPILOT AI · REPORT STUDIO</div><h1>Download & Export</h1><p>Choose a format to take your analysis with you. Export options are designed to match your workflow.</p></div><div className="export-dataset-pill"><span>ACTIVE DATASET</span><strong>{dataset.name || dataset.original_filename}</strong><small>{Number(dataset.row_count||0).toLocaleString("en-IN")} rows · {Number(dataset.column_count||0).toLocaleString("en-IN")} columns</small></div></div>
@@ -93,9 +125,12 @@ function App() {
 
   useEffect(() => {
     if (!printDashboard || section !== "Executive BI" || !dashboardExportData) return;
-    const frame = window.requestAnimationFrame(() => window.requestAnimationFrame(() => { window.print(); setPrintDashboard(false); }));
+    const frame = window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      window.print();
+      setPrintDashboard(false);
+    }));
     return () => window.cancelAnimationFrame(frame);
-  }, [printDashboard, section]);
+  }, [printDashboard, section, dashboardExportData]);
 
   useEffect(() => {
     if (!selected?.id) { setProfile(null); setPreview(null); return; }
