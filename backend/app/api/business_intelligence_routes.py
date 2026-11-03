@@ -395,13 +395,16 @@ def advanced_dashboard(
     country: str | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
+    product: str | None = None,
+    quarter: str | None = None,
+    weekday: str | None = None,
     db: Session = Depends(get_db),
 ):
     df = _load_dataset(dataset_id, db)
     try:
         return {
             "dataset_id": dataset_id,
-            **build_advanced_dashboard(df, country=country, start_date=start_date, end_date=end_date),
+            **build_advanced_dashboard(df, country=country, start_date=start_date, end_date=end_date, product=product, quarter=quarter, weekday=weekday),
         }
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
