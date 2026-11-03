@@ -8,6 +8,45 @@ const unwrap = (data) => data?.data ?? data;
 
 function Icon({ children }) { return <span className="icon" aria-hidden="true">{children}</span>; }
 
+
+function DownloadExport({ dataset, profile, preview }) {
+  const safeName = (dataset?.name || dataset?.original_filename || "datapilot-report").replace(/[^a-z0-9-_]/gi, "-");
+  const rows = preview?.rows || preview?.data || [];
+  const headers = preview?.columns || (rows[0] ? Object.keys(rows[0]) : []);
+  const downloadCsv = () => {
+    if (!headers.length) { window.alert("No preview rows are available to export yet."); return; }
+    const quote = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
+    const csv = [headers.map(quote).join(","), ...rows.map((row) => headers.map((key) => quote(row[key])).join(","))].join("\\r\\n");
+    const blob = new Blob(["\\ufeff", csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob); const link = document.createElement("a");
+    link.href = url; link.download = `${safeName}-data-export.csv`; link.click(); URL.revokeObjectURL(url);
+  };
+  const downloadPng = () => {
+    const canvas = document.createElement("canvas"); canvas.width = 1600; canvas.height = 900;
+    const ctx = canvas.getContext("2d");
+    const bg = ctx.createLinearGradient(0,0,1600,900); bg.addColorStop(0,"#080b15"); bg.addColorStop(1,"#111a2d");
+    ctx.fillStyle=bg;ctx.fillRect(0,0,1600,900);
+    ctx.fillStyle="#7889ff";ctx.fillRect(90,90,8,80);
+    ctx.fillStyle="#f2f5ff";ctx.font="bold 52px Arial";ctx.fillText("DataPilot AI",120,130);
+    ctx.fillStyle="#8d9bb5";ctx.font="24px Arial";ctx.fillText("DATASET SNAPSHOT  /  "+(dataset?.name || dataset?.original_filename || "Selected dataset"),120,180);
+    ctx.strokeStyle="#263650";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(90,230);ctx.lineTo(1510,230);ctx.stroke();
+    const metrics=[["ROWS ANALYZED",Number(dataset?.row_count||0).toLocaleString("en-IN")],["COLUMNS",Number(dataset?.column_count||0).toLocaleString("en-IN")],["DATA QUALITY",(profile?.quality_score ?? profile?.data_quality_score) == null ? "—" : (profile?.quality_score ?? profile?.data_quality_score)+"%"],["FILE TYPE",String(dataset?.file_type||dataset?.format||"Dataset").toUpperCase()]];
+    metrics.forEach((m,i)=>{const x=90+i*360;ctx.fillStyle="#111a2d";ctx.strokeStyle="#263650";ctx.fillRect(x,290,330,190);ctx.strokeRect(x,290,330,190);ctx.fillStyle="#e8c46e";ctx.font="bold 19px Arial";ctx.fillText(m[0],x+25,335);ctx.fillStyle="#f2f5ff";ctx.font="bold 42px Arial";ctx.fillText(m[1],x+25,405);ctx.fillStyle="#46c6b6";ctx.fillRect(x+25,445,75,5);});
+    ctx.fillStyle="#8d9bb5";ctx.font="20px Arial";ctx.fillText("Generated in DataPilot AI · "+new Date().toLocaleDateString(),90,820);
+    const link=document.createElement("a");link.download=`${safeName}-snapshot.png`;link.href=canvas.toDataURL("image/png");link.click();
+  };
+  if (!dataset) return <div className="empty-state"><div className="empty-icon">⇩</div><h3>Select a dataset first</h3><p>Upload or select a dataset to create exports.</p></div>;
+  return <section className="export-studio">
+    <div className="export-hero"><div><div className="export-eyebrow"><span/> DATAPILOT AI · REPORT STUDIO</div><h1>Download & Export</h1><p>Choose a format to take your analysis with you. Export options are designed to match your workflow.</p></div><div className="export-dataset-pill"><span>ACTIVE DATASET</span><strong>{dataset.name || dataset.original_filename}</strong><small>{Number(dataset.row_count||0).toLocaleString("en-IN")} rows · {Number(dataset.column_count||0).toLocaleString("en-IN")} columns</small></div></div>
+    <div className="export-format-grid">
+      <article className="export-format-card export-pdf"><div className="export-card-top"><div className="export-format-icon">PDF</div><span className="export-format-badge">PRESENTATION READY</span></div><h2>PDF Report</h2><p>Print or save a polished report with the DataPilot dark theme. Use your browser's Save as PDF option.</p><ul><li>Branded report studio cover</li><li>Dataset snapshot and metadata</li><li>Optimized for landscape pages</li></ul><button onClick={()=>window.print()} className="export-action">⇩ Save PDF <span>→</span></button></article>
+      <article className="export-format-card export-png"><div className="export-card-top"><div className="export-format-icon">PNG</div><span className="export-format-badge">HIGH RESOLUTION</span></div><h2>Dashboard Image</h2><p>Download a crisp branded snapshot to share in presentations, reports, or messages.</p><ul><li>1600 × 900 image</li><li>Dark navy with gradient accents</li><li>KPI summary tiles</li></ul><button onClick={downloadPng} className="export-action">⇩ Download PNG <span>→</span></button></article>
+      <article className="export-format-card export-xls"><div className="export-card-top"><div className="export-format-icon">XLS</div><span className="export-format-badge">EXCEL COMPATIBLE</span></div><h2>Excel Data Export</h2><p>Export the available dataset preview as a CSV file that opens directly in Microsoft Excel.</p><ul><li>Column headers preserved</li><li>UTF-8 encoding</li><li>Easy to sort and analyze</li></ul><button onClick={downloadCsv} className="export-action" disabled={!headers.length}>⇩ Export CSV for Excel <span>→</span></button></article>
+    </div>
+    <div className="export-note"><span>✦</span><div><strong>Exporting the selected dataset</strong><p>CSV export includes the preview rows currently provided by DataPilot. The PDF action opens print/save dialog. PNG is a branded dataset snapshot.</p></div></div>
+  </section>;
+}
+
 function App() {
   const [datasets, setDatasets] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -101,7 +140,7 @@ function App() {
         <a className="brand" href="#" onClick={() => setSection("Overview")}><span className="brand-mark">D</span><span>DataPilot<span className="brand-ai"> AI</span><small>INTELLIGENCE WORKSPACE</small></span></a>
         <div className="workspace-label">WORKSPACE</div>
         <nav className="nav flex-column">
-          {[["Overview","◫"],["Datasets","▤"],["Analytics","▥"],["Executive BI","✦"]].map(([label, icon]) =>
+          {[["Overview","◫"],["Datasets","▤"],["Analytics","▥"],["Executive BI","✦"],["Download & Export","⇩"]].map(([label, icon]) =>
             <button key={label} className={`nav-link ${section === label ? "active" : ""}`} onClick={() => setSection(label)}><span>{icon}</span>{label}</button>
           )}
         </nav>
@@ -140,6 +179,8 @@ function App() {
           </>}
 
           {section === "Executive BI" && <ExecutiveDashboard dataset={selected} />}
+
+          {section === "Download & Export" && <DownloadExport dataset={selected} profile={profile} preview={preview} />}
 
           {section === "Datasets" && <>
             <div className="page-heading"><div><div className="eyebrow">DATA MANAGEMENT</div><h1>Your datasets</h1><p>Upload, organize and inspect your data sources.</p></div><button className="primary-button" onClick={() => fileRef.current?.click()}>＋ Upload dataset</button></div>
