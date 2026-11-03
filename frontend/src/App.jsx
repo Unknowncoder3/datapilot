@@ -9,71 +9,62 @@ const unwrap = (data) => data?.data ?? data;
 function Icon({ children }) { return <span className="icon" aria-hidden="true">{children}</span>; }
 
 
-function DownloadExport({ dataset, profile, preview, dashboardExportData, onPdfExport }) {
-  const safeName = (dataset?.name || dataset?.original_filename || "datapilot-report").replace(/[^a-z0-9-_]/gi, "-");
+function DownloadExport({ dataset, profile, preview, dashboardExportData }) {
+  const [format, setFormat] = useState(null);
+  const [chosen, setChosen] = useState("executive");
+  const safeName = (dataset?.name || dataset?.original_filename || "datapilot-dashboard").replace(/[^a-z0-9-_]/gi, "-");
   const rows = preview?.rows || preview?.data || [];
   const headers = preview?.columns || (rows[0] ? Object.keys(rows[0]) : []);
-  const downloadPdf = () => { onPdfExport?.(); };
-  const downloadCsv = () => {
-    if (!headers.length) { window.alert("No preview rows are available to export yet."); return; }
-    const quote = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
-    const csv = [headers.map(quote).join(","), ...rows.map((row) => headers.map((key) => quote(row[key])).join(","))].join("\r\n");
-    const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob); const link = document.createElement("a");
-    link.href = url; link.download = `${safeName}-data-export.csv`; link.click(); URL.revokeObjectURL(url);
+  const d = dashboardExportData || {};
+  const designs = [
+    {id:"executive",name:"Executive Dark",desc:"Dark navy, KPI-first hierarchy, trend + donut charts.",bg:"#080b15",panel:"#111a2d",text:"#f2f5ff",muted:"#8d9bb5",accent:"#7889ff",accent2:"#46c6b6",layout:"wide"},
+    {id:"clean",name:"Clean Professional",desc:"Light canvas, crisp typography, report-ready structure.",bg:"#f4f6fb",panel:"#ffffff",text:"#17223b",muted:"#75819a",accent:"#596be8",accent2:"#159c87",layout:"wide"},
+    {id:"aurora",name:"Aurora Analytics",desc:"Violet gradients, compact KPI strip, chart-rich layout.",bg:"#100d24",panel:"#1c1734",text:"#f5f0ff",muted:"#b2a6d0",accent:"#b99aff",accent2:"#d47eb4",layout:"stack"},
+    {id:"teal",name:"Corporate Teal",desc:"Calm teal palette with structured business breakdowns.",bg:"#071a1b",panel:"#102526",text:"#eafffb",muted:"#8db5b1",accent:"#46c6b6",accent2:"#e4c65a",layout:"wide"},
+    {id:"insights",name:"Analytics Focus",desc:"Charts take center stage; segments and quarter views emphasized.",bg:"#101827",panel:"#19263a",text:"#eef5ff",muted:"#9bb0c9",accent:"#5ba8ff",accent2:"#fa7e91",layout:"stack"}
+  ];
+  const design = designs.find(x=>x.id===chosen) || designs[0];
+  const kpis=(d.kpis||[]).slice(0,5), trend=(d.monthly_revenue||[]).slice(0,12);
+  const countries=(d.country_revenue||[]).slice(0,8), products=(d.product_revenue||[]).slice(0,8);
+  const segments=(d.customer_segments||[]).slice(0,6), quarters=(d.quarterly_revenue||[]).slice(0,4);
+  const money=(v)=>{const n=Number(v||0),a=Math.abs(n);return a>=1e6?"£"+(n/1e6).toFixed(2)+"M":a>=1e3?"£"+(n/1e3).toFixed(1)+"K":n.toLocaleString("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:2});};
+  const value=(item)=>item?.format==="currency"?money(item.value):Number(item?.value||0).toLocaleString("en-IN");
+  const chartBars=(items,key)=>items.map((item,i)=><div className="gallery-bar" key={i}><span>{item[key]||item.quarter||item.segment||"—"}</span><b>{money(item.revenue??item.value)}</b><i><em style={{width:(Math.max(0,Number(item.revenue??item.value??0))/Math.max(1,...items.map(x=>Math.max(0,Number(x.revenue??x.value??0))))*100)+"%",background:design.accent2}}/></i></div>);
+  const downloadCsv=()=>{
+    if(!headers.length){window.alert("No preview rows are available to export yet.");return;}
+    const quote=(v)=>"\""+String(v??"").replaceAll("\"","\"\"")+"\"";
+    const csv=[headers.map(quote).join(","),...rows.map(row=>headers.map(key=>quote(row[key])).join(","))].join("\r\n");
+    const blob=new Blob(["\ufeff",csv],{type:"text/csv;charset=utf-8;"}),url=URL.createObjectURL(blob),link=document.createElement("a");
+    link.href=url;link.download=safeName+"-data-export.csv";link.click();URL.revokeObjectURL(url);
   };
-  const downloadPng = () => {
-    const data = dashboardExportData;
-    if (!data) { window.alert("Dashboard data is still loading. Open Executive BI and wait for the visuals to finish, then try again."); return; }
-    const canvas = document.createElement("canvas");
-    canvas.width = 1600; canvas.height = 1900;
-    const ctx = canvas.getContext("2d");
-    const bg = ctx.createLinearGradient(0, 0, 1600, 1900);
-    bg.addColorStop(0, "#080b15"); bg.addColorStop(1, "#111a2d");
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, 1600, 1900);
-    const text = (value, x, y, font = "16px Arial", color = "#f2f5ff") => { ctx.font = font; ctx.fillStyle = color; ctx.fillText(String(value ?? ""), x, y); };
-    const panel = (x,y,w,h) => { ctx.fillStyle="#111a2d";ctx.strokeStyle="#263650";ctx.lineWidth=2;ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h); };
-    const currency = (value) => { const n=Number(value||0), a=Math.abs(n); return a>=1e6?`£${(n/1e6).toFixed(2)}M`:a>=1e3?`£${(n/1e3).toFixed(1)}K`:n.toLocaleString("en-GB",{style:"currency",currency:"GBP",maximumFractionDigits:2}); };
-    const datasetName = dataset?.name || dataset?.original_filename || "Selected dataset";
-    ctx.fillStyle="#7889ff";ctx.fillRect(90,75,8,90);
-    text("DataPilot AI",120,125,"bold 54px Arial");
-    text("EXECUTIVE BI DASHBOARD  /  "+datasetName,120,170,"24px Arial","#8d9bb5");
-    ctx.strokeStyle="#263650";ctx.beginPath();ctx.moveTo(90,215);ctx.lineTo(1510,215);ctx.stroke();
-    const kpis=(data.kpis||[]).slice(0,5);
-    kpis.forEach((item,i)=>{const w= kpis.length===5?270:330,x=90+i*(w+12);panel(x,250,w,150);text(String(item.label||"METRIC").toUpperCase(),x+20,285,"bold 17px Arial","#e8c46e");text(item.format==="currency"?currency(item.value):Number(item.value||0).toLocaleString("en-IN"),x+20,345,"bold 32px Arial");ctx.fillStyle=["#7889ff","#46c6b6","#b99aff","#ffad55","#fa7e91"][i%5];ctx.fillRect(x+20,370,65,5);});
-    const trend=(data.monthly_revenue||[]).slice(0,16), vals=trend.map(i=>Number(i.revenue||0)), max=Math.max(1,...vals), min=Math.min(0,...vals);
-    panel(90,430,920,390);text("MONTHLY REVENUE TREND",120,475,"bold 22px Arial","#e8c46e");
-    ctx.strokeStyle="#283650";ctx.lineWidth=1;for(let y=520;y<=750;y+=46){ctx.beginPath();ctx.moveTo(120,y);ctx.lineTo(980,y);ctx.stroke();}
-    if(vals.length){ctx.strokeStyle="#d47eb4";ctx.lineWidth=5;ctx.beginPath();vals.forEach((v,i)=>{const x=130+i*(830/Math.max(1,vals.length-1)),y=750-((v-min)/Math.max(1,max-min))*210;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
-      vals.forEach((v,i)=>{const x=130+i*(830/Math.max(1,vals.length-1)),y=750-((v-min)/Math.max(1,max-min))*210;ctx.fillStyle="#7889ff";ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();text(trend[i]?.period||"",x-25,785,"12px Arial","#8d9bb5");});}
-    panel(1030,430,480,390);text("REVENUE MIX BY COUNTRY",1060,475,"bold 22px Arial","#e8c46e");
-    const countries=(data.country_revenue||[]).slice(0,8), total=countries.reduce((s,i)=>s+Math.max(0,Number(i.revenue||0)),0);
-    const colors=["#7889ff","#46c6b6","#ffad55","#fa7e91","#b99aff","#5ba8ff","#e4c65a","#d47eb4"];
-    let angle=-Math.PI/2;
-    countries.forEach((item,i)=>{const v=Math.max(0,Number(item.revenue||0)), next=angle+(total?v/total*Math.PI*2:0);ctx.beginPath();ctx.moveTo(1230,610);ctx.arc(1230,610,125,angle,next);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();angle=next;});
-    ctx.beginPath();ctx.arc(1230,610,75,0,Math.PI*2);ctx.fillStyle="#111a2d";ctx.fill();
-    countries.slice(0,6).forEach((item,i)=>{ctx.fillStyle=colors[i%colors.length];ctx.fillRect(1060,755+i*16,8,8);text(String(item.country||"").slice(0,22),1075,763+i*16,"11px Arial","#dce4f6");text(currency(item.revenue),1370,763+i*16,"bold 11px Arial");});
-    const drawBars=(title,items,nameKey,y,height,accent="#46c6b6",count=8)=>{panel(90,y,1420,height);text(title,120,y+42,"bold 22px Arial","#e8c46e");const list=(items||[]).slice(0,count),maxV=Math.max(1,...list.map(i=>Number(i.revenue??i.value??0)));list.forEach((item,i)=>{const yy=y+78+i*((height-100)/Math.max(1,list.length));text(String(item[nameKey]||"").slice(0,55),120,yy+12,"13px Arial","#dce4f6");text(currency(item.revenue??item.value),520,yy+12,"bold 13px Arial");ctx.fillStyle="#202d45";ctx.fillRect(700,yy,760,10);ctx.fillStyle=accent;ctx.fillRect(700,yy,Math.max(3,760*Number(item.revenue??item.value??0)/maxV),10);});};
-    drawBars("TOP PRODUCTS BY REVENUE",data.product_revenue,"product",850,280,"#46c6b6",8);
-    drawBars("CUSTOMER SEGMENT MIX",data.customer_segments,"segment",1150,250,"#b99aff",6);
-    drawBars("QUARTERLY REVENUE",data.quarterly_revenue,"quarter",1420,210,"#7889ff",4);
-    text("Generated in DataPilot AI · "+new Date().toLocaleDateString(),90,1865,"16px Arial","#8d9bb5");
-    const link=document.createElement("a");link.download=`${safeName}-dashboard.png`;link.href=canvas.toDataURL("image/png");link.click();
+  const exportPng=()=>{
+    const canvas=document.createElement("canvas");canvas.width=1800;canvas.height=2100;const ctx=canvas.getContext("2d");
+    ctx.fillStyle=design.bg;ctx.fillRect(0,0,canvas.width,canvas.height);
+    const txt=(s,x,y,font="20px Arial",color=design.text)=>{ctx.font=font;ctx.fillStyle=color;ctx.fillText(String(s??""),x,y);};
+    const card=(x,y,w,h)=>{ctx.fillStyle=design.panel;ctx.strokeStyle=design.accent+"66";ctx.lineWidth=2;ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h);};
+    txt("DATAPILOT AI",85,100,"bold 52px Arial",design.accent);txt("EXECUTIVE DASHBOARD  /  "+(dataset?.name||"Selected dataset"),85,150,"26px Arial",design.muted);
+    const kw=310;kpis.forEach((item,i)=>{let x=85+i*(kw+18);card(x,210,kw,145);txt(String(item.label||"METRIC").toUpperCase(),x+20,250,"bold 18px Arial",design.accent2);txt(value(item),x+20,310,"bold 34px Arial");});
+    card(85,390,1050,430);txt("REVENUE TREND",115,440,"bold 26px Arial",design.accent);const vals=trend.map(x=>Number(x.revenue||0)),max=Math.max(1,...vals),min=Math.min(0,...vals);
+    ctx.strokeStyle=design.accent2;ctx.lineWidth=6;ctx.beginPath();vals.forEach((v,i)=>{const x=140+i*900/Math.max(1,vals.length-1),y=750-(v-min)/Math.max(1,max-min)*250;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+    vals.forEach((v,i)=>{const x=140+i*900/Math.max(1,vals.length-1),y=750-(v-min)/Math.max(1,max-min)*250;ctx.fillStyle=design.accent;ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.fill();txt(trend[i]?.period||"",x-24,790,"13px Arial",design.muted);});
+    card(1165,390,550,430);txt("COUNTRY MIX",1195,440,"bold 26px Arial",design.accent);
+    const valsC=countries.map(x=>Math.max(0,Number(x.revenue||0))),total=valsC.reduce((a,b)=>a+b,0);let angle=-Math.PI/2;const colors=[design.accent,design.accent2,"#ffad55","#fa7e91","#b99aff","#5ba8ff","#e4c65a","#d47eb4"];
+    countries.forEach((item,i)=>{const next=angle+(total?valsC[i]/total*Math.PI*2:0);ctx.beginPath();ctx.moveTo(1440,620);ctx.arc(1440,620,150,angle,next);ctx.closePath();ctx.fillStyle=colors[i%colors.length];ctx.fill();angle=next;});ctx.beginPath();ctx.arc(1440,620,85,0,Math.PI*2);ctx.fillStyle=design.panel;ctx.fill();
+    const drawList=(title,items,key,y,h,color)=>{card(85,y,1630,h);txt(title,115,y+45,"bold 26px Arial",design.accent);const maxV=Math.max(1,...items.map(x=>Number(x.revenue??x.value??0)));items.forEach((it,i)=>{const yy=y+85+i*((h-105)/Math.max(1,items.length));txt(String(it[key]||it.quarter||it.segment||"").slice(0,44),115,yy+15,"16px Arial");txt(money(it.revenue??it.value),500,yy+15,"bold 16px Arial");ctx.fillStyle=design.panel;ctx.fillRect(700,yy,950,14);ctx.fillStyle=color;ctx.fillRect(700,yy,Math.max(3,950*Number(it.revenue??it.value??0)/maxV),14);});};
+    drawList("TOP PRODUCTS BY REVENUE",products,"product",860,300,design.accent2);drawList("CUSTOMER SEGMENTS",segments,"segment",1180,270,design.accent);drawList("QUARTERLY REVENUE",quarters,"quarter",1470,220,design.accent2);
+    txt("Generated by DataPilot AI · "+new Date().toLocaleDateString(),85,2025,"16px Arial",design.muted);
+    const link=document.createElement("a");link.download=safeName+"-"+design.id+"-dashboard.png";link.href=canvas.toDataURL("image/png");link.click();
   };
-
-
-  if (!dataset) return <div className="empty-state"><div className="empty-icon">⇩</div><h3>Select a dataset first</h3><p>Upload or select a dataset to create exports.</p></div>;
-  return <section className="export-studio">
-    <div className="export-hero"><div><div className="export-eyebrow"><span/> DATAPILOT AI · REPORT STUDIO</div><h1>Download & Export</h1><p>Choose a format to take your analysis with you. Export options are designed to match your workflow.</p></div><div className="export-dataset-pill"><span>ACTIVE DATASET</span><strong>{dataset.name || dataset.original_filename}</strong><small>{Number(dataset.row_count||0).toLocaleString("en-IN")} rows · {Number(dataset.column_count||0).toLocaleString("en-IN")} columns</small></div></div>
-    <div className="export-format-grid">
-      <article className="export-format-card export-pdf"><div className="export-card-top"><div className="export-format-icon">PDF</div><span className="export-format-badge">PRESENTATION READY</span></div><h2>PDF Report</h2><p>Print or save a polished report with the DataPilot dark theme. Use your browser's Save as PDF option.</p><ul><li>Branded report studio cover</li><li>Dataset snapshot and metadata</li><li>Optimized for landscape pages</li></ul><button onClick={downloadPdf} className="export-action">⇩ Export Executive BI PDF <span>→</span></button></article>
-      <article className="export-format-card export-png"><div className="export-card-top"><div className="export-format-icon">PNG</div><span className="export-format-badge">HIGH RESOLUTION</span></div><h2>Dashboard Image</h2><p>Download a crisp branded snapshot to share in presentations, reports, or messages.</p><ul><li>1600 × 900 image</li><li>Dark navy with gradient accents</li><li>KPI summary tiles</li></ul><button onClick={downloadPng} className="export-action">⇩ Download PNG <span>→</span></button></article>
-      <article className="export-format-card export-xls"><div className="export-card-top"><div className="export-format-icon">XLS</div><span className="export-format-badge">EXCEL COMPATIBLE</span></div><h2>Excel Data Export</h2><p>Export the available dataset preview as a CSV file that opens directly in Microsoft Excel.</p><ul><li>Column headers preserved</li><li>UTF-8 encoding</li><li>Easy to sort and analyze</li></ul><button onClick={downloadCsv} className="export-action" disabled={!headers.length}>⇩ Export CSV for Excel <span>→</span></button></article>
-    </div>
-    <div className="export-note"><span>✦</span><div><strong>Exporting the selected dataset</strong><p>CSV export includes the preview rows currently provided by DataPilot. The PDF action opens print/save dialog. PNG is a branded dataset snapshot.</p></div></div>
-  </section>;
+  const exportPdf=()=>{
+    const kpiHtml=kpis.map(item=>"<div class='kpi'><small>"+String(item.label||"Metric")+"</small><strong>"+value(item)+"</strong></div>").join("");
+    const rowsHtml=(items,key)=>items.map(item=>"<div class='barrow'><span>"+String(item[key]||item.quarter||item.segment||"")+"</span><b>"+money(item.revenue??item.value)+"</b></div>").join("");
+    const html="<!doctype html><html><head><title>"+safeName+" dashboard</title><style>@page{size:landscape;margin:10mm}*{box-sizing:border-box}body{margin:0;padding:24px;background:"+design.bg+";color:"+design.text+";font:14px Arial;-webkit-print-color-adjust:exact;print-color-adjust:exact}.head{border-left:7px solid "+design.accent+";padding:8px 16px;margin-bottom:18px}.head h1{margin:0;font-size:30px}.head p{color:"+design.muted+"}.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}.kpi,.panel{background:"+design.panel+";border:1px solid "+design.accent+"66;padding:16px;margin-bottom:12px}.kpi small{display:block;color:"+design.accent2+";font-weight:bold}.kpi strong{display:block;font-size:25px;margin-top:10px}.charts{display:grid;grid-template-columns:2fr 1fr;gap:12px}.panel h2{font-size:17px;color:"+design.accent;margin:0 0 12px}.barrow{display:grid;grid-template-columns:2fr 1fr;gap:12px;padding:6px 0;border-bottom:1px solid "+design.accent+"33}.footer{color:"+design.muted+";font-size:11px;margin-top:12px}</style></head><body><div class='head'><h1>DataPilot AI · "+(dataset?.name||"Executive BI")+"</h1><p>"+design.name+" dashboard · Dataset analysis snapshot</p></div><div class='kpis'>"+kpiHtml+"</div><div class='charts'><section class='panel'><h2>Monthly Revenue Trend</h2><div>"+rowsHtml(trend,"period")+"</div></section><section class='panel'><h2>Revenue by Country</h2>"+rowsHtml(countries,"country")+"</section></div><section class='panel'><h2>Top Products by Revenue</h2>"+rowsHtml(products,"product")+"</section><section class='panel'><h2>Customer Segments</h2>"+rowsHtml(segments,"segment")+"</section><section class='panel'><h2>Quarterly Revenue</h2>"+rowsHtml(quarters,"quarter")+"</section><div class='footer'>Generated by DataPilot AI · "+new Date().toLocaleDateString()+"</div><script>window.onload=()=>setTimeout(()=>window.print(),500)</script></body></html>";
+    const win=window.open("","_blank");if(!win){window.alert("Allow pop-ups for DataPilot to save the dashboard as PDF.");return;}win.document.open();win.document.write(html);win.document.close();
+  };
+  if(!dataset)return <div className="empty-state"><h3>Select a dataset first</h3><p>Upload or select a dataset to create exports.</p></div>;
+  if(format==="PDF"||format==="PNG")return <section className="export-studio"><div className="gallery-heading"><button className="gallery-back" onClick={()=>setFormat(null)}>← Back to formats</button><div><div className="export-eyebrow"><span/> DASHBOARD DESIGN GALLERY</div><h1>Choose your {format} dashboard</h1><p>Select a visual design. Each template changes the presentation and chart composition.</p></div></div><div className="gallery-grid">{designs.map(item=><article key={item.id} className={"gallery-card "+(chosen===item.id?"selected":"")} style={{background:item.bg,color:item.text,borderColor:chosen===item.id?item.accent: item.accent+"44"}}><div className="gallery-preview-head" style={{borderColor:item.accent}}><strong style={{color:item.accent}}>DataPilot AI</strong><span>{item.name}</span></div><div className="gallery-preview-kpis">{kpis.slice(0,3).map((k,i)=><div key={i} style={{background:item.panel,borderColor:item.accent+"44"}}><small style={{color:item.accent2}}>{k.label}</small><b>{value(k)}</b></div>)}</div><div className={"gallery-preview-charts "+item.layout}><div className="gallery-preview-line" style={{background:item.panel,borderColor:item.accent+"44"}}><span style={{color:item.accent}}>Revenue trend</span><svg viewBox="0 0 220 70"><polyline points={trend.map((v,i)=>((10+i*200/Math.max(1,trend.length-1))+","+(60-Number(v.revenue||0)/Math.max(1,...trend.map(x=>Number(x.revenue||0)))*48))).join(" ")} fill="none" stroke={item.accent2} strokeWidth="3"/></svg></div><div className="gallery-preview-breakdown" style={{background:item.panel,borderColor:item.accent+"44"}}><span style={{color:item.accent}}>Market / product</span>{chartBars(item.id==="insights"?quarters.slice(0,3):countries.slice(0,3),item.id==="insights"?"quarter":"country")}</div></div><div className="gallery-card-foot"><div><h3>{item.name}</h3><p>{item.desc}</p></div><button style={{background:chosen===item.id?item.accent:"transparent",borderColor:item.accent,color:chosen===item.id?"#fff":item.text}} onClick={()=>setChosen(item.id)}>{chosen===item.id?"✓ Selected":"Select design"}</button></div><div className="gallery-downloads"><button onClick={()=>{setChosen(item.id);exportPdf();}}>↓ Download PDF</button><button onClick={()=>{setChosen(item.id);exportPng();}}>↓ Download PNG</button></div></article>)}</div></section>;
+  return <section className="export-studio"><div className="export-hero"><div><div className="export-eyebrow"><span/> DATAPILOT AI · REPORT STUDIO</div><h1>Download & Export</h1><p>Choose a format, preview dashboard design options, and export the selected dashboard.</p></div><div className="export-dataset-pill"><span>ACTIVE DATASET</span><strong>{dataset.name||dataset.original_filename}</strong><small>{Number(dataset.row_count||0).toLocaleString("en-IN")} rows · {Number(dataset.column_count||0).toLocaleString("en-IN")} columns</small></div></div><div className="export-format-grid"><article className="export-format-card export-pdf"><div className="export-format-icon">PDF</div><h2>Dashboard PDF</h2><p>Choose from five designs and save a colored, presentation-ready dashboard.</p><button className="export-action" onClick={()=>setFormat("PDF")}>Browse PDF designs →</button></article><article className="export-format-card export-png"><div className="export-format-icon">PNG</div><h2>Dashboard PNG</h2><p>Choose a layout and download a high-resolution dashboard image.</p><button className="export-action" onClick={()=>setFormat("PNG")}>Browse PNG designs →</button></article><article className="export-format-card export-xls"><div className="export-format-icon">CSV</div><h2>Data Export</h2><p>Export the selected dataset preview for spreadsheet analysis.</p><button className="export-action" onClick={downloadCsv} disabled={!headers.length}>Export CSV →</button></article></div><div className="export-note"><span>✦</span><div><strong>Dashboard export gallery</strong><p>PDF uses browser print/save with background graphics enabled in the print dialog. PNG exports a high-resolution image with KPI cards and analytical chart sections. CSV remains the preview-data export.</p></div></div></section>;
 }
-
 function App() {
   const [datasets, setDatasets] = useState([]);
   const [selected, setSelected] = useState(null);
