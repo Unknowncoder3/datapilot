@@ -64,7 +64,7 @@ function QuarterChart({ items = [], onSelect, selected = null }) {
   return <div className="adv-quarter-chart">{items.map((item, index) => { const value = Number(item.revenue ?? item.value ?? 0); return <div className={`adv-quarter-column ${selected === item.quarter ? "adv-selected" : ""} ${onSelect ? "adv-clickable" : ""}`} key={item.quarter ?? index} role={onSelect ? "button" : undefined} tabIndex={onSelect ? 0 : undefined} onClick={onSelect ? () => onSelect(item.quarter) : undefined} onKeyDown={onSelect ? (e) => { if (e.key === "Enter" || e.key === " ") onSelect(item.quarter); } : undefined}><span>{money(value)}</span><i style={{height:`${Math.max(3, Math.abs(value)/max*100)}%`}}/><b>{item.quarter}</b></div>; })}</div>;
 }
 
-export default function ExecutiveDashboard({ dataset }) {
+export default function ExecutiveDashboard({ dataset, onDashboardData }) {
   const [dashboard, setDashboard] = useState(null);
   const [country, setCountry] = useState("All");
   const [startDate, setStartDate] = useState("");
@@ -92,6 +92,8 @@ export default function ExecutiveDashboard({ dataset }) {
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [dataset?.id, country, startDate, endDate, product, quarter, weekday]);
+
+  useEffect(() => { onDashboardData?.(dashboard); }, [dashboard, onDashboardData]);
 
   if (!dataset?.id) return <div className="empty-state"><div className="empty-icon">✦</div><h3>Select a dataset first</h3><p>Choose a dataset to build an advanced BI dashboard.</p></div>;
 
@@ -124,7 +126,7 @@ export default function ExecutiveDashboard({ dataset }) {
         <label><span>Invoice date · to</span><input type="date" value={endDate} min={startDate || dashboard?.date_min || undefined} max={dashboard?.date_max || undefined} onChange={(e) => setEndDate(e.target.value)} /></label>
         <button type="button" onClick={clearFilters} className="adv-reset">Reset filters</button>
       </div>
-      <div className="adv-export-actions"><button type="button" onClick={exportCsv} className="adv-export-button">↓ Export CSV</button><button type="button" onClick={() => window.print()} className="adv-export-button adv-export-primary">▣ Download PDF</button></div>
+      <div className="adv-export-actions"><button type="button" onClick={exportCsv} className="adv-export-button">↓ Export CSV</button></div>
     </header>
     <div className="adv-dashboard-status"><span className={loading ? "adv-status-loading" : "adv-status-dot"} />{loading ? "Updating visuals…" : `Dataset loaded · ${number(dashboard?.dataset_rows)} filtered rows`}<span className="adv-status-period">{periodLabel}</span></div>
     {error && <div className="alert alert-warning">{error}<button className="text-button ms-2" onClick={() => { setCountry(country); }}>Retry by changing a filter</button></div>}
