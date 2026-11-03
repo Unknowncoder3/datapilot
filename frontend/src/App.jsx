@@ -35,7 +35,15 @@ function DownloadExport({ dataset, profile, preview }) {
     ctx.strokeStyle="#263650";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(90,230);ctx.lineTo(1510,230);ctx.stroke();
     const metrics=(data.kpis||[]).slice(0,4).map((item)=>[String(item.label||"METRIC").toUpperCase(),item.format==="currency" ? "£"+Number(item.value||0).toLocaleString("en-GB",{maximumFractionDigits:2}) : Number(item.value||0).toLocaleString("en-IN")]);
     metrics.forEach((m,i)=>{const x=90+i*360;ctx.fillStyle="#111a2d";ctx.strokeStyle="#263650";ctx.fillRect(x,290,330,190);ctx.strokeRect(x,290,330,190);ctx.fillStyle="#e8c46e";ctx.font="bold 19px Arial";ctx.fillText(m[0],x+25,335);ctx.fillStyle="#f2f5ff";ctx.font="bold 42px Arial";ctx.fillText(m[1],x+25,405);ctx.fillStyle="#46c6b6";ctx.fillRect(x+25,445,75,5);});
-    ctx.fillStyle="#8d9bb5";ctx.font="20px Arial";ctx.fillText("Generated in DataPilot AI · "+new Date().toLocaleDateString(),90,820);
+    ctx.fillStyle="#e8c46e";ctx.font="bold 24px Arial";ctx.fillText("MONTHLY REVENUE TREND",90,545);
+    const trend=(data.monthly_revenue||[]).slice(0,12), vals=trend.map((item)=>Number(item.revenue||0)), maxTrend=Math.max(1,...vals);
+    ctx.strokeStyle="#263650";ctx.lineWidth=1;for(let y=580;y<=700;y+=30){ctx.beginPath();ctx.moveTo(90,y);ctx.lineTo(1510,y);ctx.stroke();}
+    ctx.strokeStyle="#d47eb4";ctx.lineWidth=5;ctx.beginPath();vals.forEach((value,i)=>{const x=100+i*(1380/Math.max(1,vals.length-1)),y=700-(value/maxTrend)*110;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+    vals.forEach((value,i)=>{const x=100+i*(1380/Math.max(1,vals.length-1)),y=700-(value/maxTrend)*110;ctx.fillStyle="#7889ff";ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();ctx.fillStyle="#8d9bb5";ctx.font="13px Arial";ctx.fillText(trend[i]?.period||"",x-24,730);});
+    ctx.fillStyle="#e8c46e";ctx.font="bold 24px Arial";ctx.fillText("TOP PRODUCTS BY REVENUE",90,780);
+    const products=(data.product_revenue||[]).slice(0,3),maxProduct=Math.max(1,...products.map((p)=>Number(p.revenue||0)));
+    products.forEach((item,i)=>{const y=815+i*25;ctx.fillStyle="#8d9bb5";ctx.font="14px Arial";ctx.fillText(String(item.product||"").slice(0,48),90,y);ctx.fillStyle="#46c6b6";ctx.fillRect(600,y-12,Math.max(5,800*Number(item.revenue||0)/maxProduct),8);});
+    ctx.fillStyle="#8d9bb5";ctx.font="16px Arial";ctx.fillText("Generated in DataPilot AI · "+new Date().toLocaleDateString(),90,890);
     const link=document.createElement("a");link.download=`${safeName}-snapshot.png`;link.href=canvas.toDataURL("image/png");link.click();
   };
   if (!dataset) return <div className="empty-state"><div className="empty-icon">⇩</div><h3>Select a dataset first</h3><p>Upload or select a dataset to create exports.</p></div>;
