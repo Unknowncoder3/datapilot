@@ -139,3 +139,8 @@ export const getApiErrorMessage = (
 };
 
 export default api;
+
+
+// Advanced BI dashboard: aggregated dataset visuals and dashboard filters.
+export const getAdvancedDashboard = (datasetId, params = {}) =>
+  api.get(`/analytics/${datasetId}/bi/advanced-dashboard`, { params });
