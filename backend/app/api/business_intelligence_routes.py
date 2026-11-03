@@ -384,3 +384,24 @@ def prioritized_recommendations(
         }
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from app.services.business_intelligence.advanced_dashboard_engine import build_advanced_dashboard
+
+
+@router.get("/{dataset_id}/bi/advanced-dashboard")
+def advanced_dashboard(
+    dataset_id: int,
+    country: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    db: Session = Depends(get_db),
+):
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {
+            "dataset_id": dataset_id,
+            **build_advanced_dashboard(df, country=country, start_date=start_date, end_date=end_date),
+        }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
