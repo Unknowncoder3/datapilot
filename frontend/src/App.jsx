@@ -9,11 +9,11 @@ const unwrap = (data) => data?.data ?? data;
 function Icon({ children }) { return <span className="icon" aria-hidden="true">{children}</span>; }
 
 
-function DownloadExport({ dataset, profile, preview }) {
+function DownloadExport({ dataset, profile, preview, dashboardExportData, onPdfExport }) {
   const safeName = (dataset?.name || dataset?.original_filename || "datapilot-report").replace(/[^a-z0-9-_]/gi, "-");
   const rows = preview?.rows || preview?.data || [];
   const headers = preview?.columns || (rows[0] ? Object.keys(rows[0]) : []);
-  const downloadPdf = () => { setPrintDashboard(true); setSection("Executive BI"); };
+  const downloadPdf = () => { onPdfExport?.(); };
   const downloadCsv = () => {
     if (!headers.length) { window.alert("No preview rows are available to export yet."); return; }
     const quote = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
@@ -92,7 +92,7 @@ function App() {
   useEffect(() => { refresh(); }, []);
 
   useEffect(() => {
-    if (!printDashboard || section !== "Executive BI") return;
+    if (!printDashboard || section !== "Executive BI" || !dashboardExportData) return;
     const frame = window.requestAnimationFrame(() => window.requestAnimationFrame(() => { window.print(); setPrintDashboard(false); }));
     return () => window.cancelAnimationFrame(frame);
   }, [printDashboard, section]);
@@ -199,7 +199,7 @@ function App() {
 
           {section === "Executive BI" && <ExecutiveDashboard dataset={selected} onDashboardData={setDashboardExportData} />}
 
-          {section === "Download & Export" && <DownloadExport dataset={selected} profile={profile} preview={preview} />}
+          {section === "Download & Export" && <DownloadExport dataset={selected} profile={profile} preview={preview} dashboardExportData={dashboardExportData} onPdfExport={() => { setDashboardExportData(null); setPrintDashboard(true); setSection("Executive BI"); }} />}
 
           {section === "Datasets" && <>
             <div className="page-heading"><div><div className="eyebrow">DATA MANAGEMENT</div><h1>Your datasets</h1><p>Upload, organize and inspect your data sources.</p></div><button className="primary-button" onClick={() => fileRef.current?.click()}>＋ Upload dataset</button></div>
