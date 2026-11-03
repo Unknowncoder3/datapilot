@@ -16,8 +16,8 @@ function DownloadExport({ dataset, profile, preview }) {
   const downloadCsv = () => {
     if (!headers.length) { window.alert("No preview rows are available to export yet."); return; }
     const quote = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
-    const csv = [headers.map(quote).join(","), ...rows.map((row) => headers.map((key) => quote(row[key])).join(","))].join("\\r\\n");
-    const blob = new Blob(["\\ufeff", csv], { type: "text/csv;charset=utf-8;" });
+    const csv = [headers.map(quote).join(","), ...rows.map((row) => headers.map((key) => quote(row[key])).join(","))].join("\r\n");
+    const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob); const link = document.createElement("a");
     link.href = url; link.download = `${safeName}-data-export.csv`; link.click(); URL.revokeObjectURL(url);
   };
