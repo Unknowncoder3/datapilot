@@ -11,12 +11,12 @@ const money = (value) => {
 const number = (value) => value == null ? "—" : Number(value).toLocaleString("en-IN", { maximumFractionDigits: 0 });
 const titleCase = (text) => String(text || "").replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-function BarList({ items = [], nameKey, maxRows = 10, format = money, accent = "blue" }) {
+function BarList({ items = [], nameKey, maxRows = 10, format = money, accent = "blue", onSelect, selected = null }) {
   const list = items.slice(0, maxRows);
   const max = Math.max(1, ...list.map((item) => Math.abs(Number(item.revenue ?? item.value ?? 0))));
   return <div className={`adv-bar-list adv-${accent}`}>{list.map((item, index) => {
     const value = Number(item.revenue ?? item.value ?? 0);
-    return <div className="adv-bar-item" key={item[nameKey] ?? index}>
+    return <div className={`adv-bar-item ${selected === item[nameKey] ? "adv-selected" : ""} ${onSelect ? "adv-clickable" : ""}`} key={item[nameKey] ?? index} role={onSelect ? "button" : undefined} tabIndex={onSelect ? 0 : undefined} onClick={onSelect ? () => onSelect(item[nameKey]) : undefined} onKeyDown={onSelect ? (e) => { if (e.key === "Enter" || e.key === " ") onSelect(item[nameKey]); } : undefined}>
       <div className="adv-bar-label"><span title={item[nameKey]}>{item[nameKey]}</span><b>{format(value)}</b></div>
       <div className="adv-bar-track"><i style={{ width: `${Math.max(1.5, Math.abs(value) / max * 100)}%` }} /></div>
     </div>;
@@ -58,10 +58,10 @@ function DonutChart({ items = [], nameKey, onSelect, selected = null, label = "R
   });
   return <div className="adv-donut-layout"><div className="adv-donut-wrap"><svg viewBox="0 0 200 200" role="img" aria-label={label}>{arcs.map((arc) => <path key={arc.index} d={arc.path} fill="none" stroke={arc.color} strokeWidth="25" strokeLinecap="butt" opacity={selected && selected !== arc.item[nameKey] ? .28 : 1} className={onSelect ? "adv-donut-slice" : ""} onClick={onSelect ? () => onSelect(arc.item[nameKey]) : undefined} tabIndex={onSelect ? 0 : undefined} role={onSelect ? "button" : undefined}><title>{arc.item[nameKey]}: {money(arc.value)} · click to filter</title></path>)}</svg><div className="adv-donut-center"><b>{items.length}</b><span>categories</span></div></div><div className="adv-donut-legend">{arcs.map((arc) => <button type="button" key={arc.index} onClick={onSelect ? () => onSelect(arc.item[nameKey]) : undefined} className={selected && selected !== arc.item[nameKey] ? "is-muted" : ""} disabled={!onSelect}><i style={{background:arc.color}}/><span>{arc.item[nameKey]}</span><b>{money(arc.value)}</b></button>)}</div></div>;
 }
-function QuarterChart({ items = [] }) {
+function QuarterChart({ items = [], onSelect, selected = null }) {
   if (!items.length) return <div className="adv-empty">No quarter/date data available.</div>;
   const max = Math.max(1, ...items.map((item) => Math.abs(Number(item.revenue ?? item.value ?? 0))));
-  return <div className="adv-quarter-chart">{items.map((item, index) => { const value = Number(item.revenue ?? item.value ?? 0); return <div className="adv-quarter-column" key={item.quarter ?? index}><span>{money(value)}</span><i style={{height:`${Math.max(3, Math.abs(value)/max*100)}%`}}/><b>{item.quarter}</b></div>; })}</div>;
+  return <div className="adv-quarter-chart">{items.map((item, index) => { const value = Number(item.revenue ?? item.value ?? 0); return <div className={`adv-quarter-column ${selected === item.quarter ? "adv-selected" : ""} ${onSelect ? "adv-clickable" : ""}`} key={item.quarter ?? index} role={onSelect ? "button" : undefined} tabIndex={onSelect ? 0 : undefined} onClick={onSelect ? () => onSelect(item.quarter) : undefined} onKeyDown={onSelect ? (e) => { if (e.key === "Enter" || e.key === " ") onSelect(item.quarter); } : undefined}><span>{money(value)}</span><i style={{height:`${Math.max(3, Math.abs(value)/max*100)}%`}}/><b>{item.quarter}</b></div>; })}</div>;
 }
 
 export default function ExecutiveDashboard({ dataset }) {
@@ -69,6 +69,9 @@ export default function ExecutiveDashboard({ dataset }) {
   const [country, setCountry] = useState("All");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [product, setProduct] = useState("");
+  const [quarter, setQuarter] = useState("");
+  const [weekday, setWeekday] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -80,17 +83,38 @@ export default function ExecutiveDashboard({ dataset }) {
     if (country && country !== "All") params.country = country;
     if (startDate) params.start_date = startDate;
     if (endDate) params.end_date = endDate;
+    if (product) params.product = product;
+    if (quarter) params.quarter = quarter;
+    if (weekday) params.weekday = weekday;
     getAdvancedDashboard(dataset.id, params)
       .then((response) => { if (active) setDashboard(response?.data?.data ?? response?.data ?? null); })
       .catch((err) => { if (active) setError(getApiErrorMessage(err, "Unable to load advanced dashboard data.")); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [dataset?.id, country, startDate, endDate]);
+  }, [dataset?.id, country, startDate, endDate, product, quarter, weekday]);
 
   if (!dataset?.id) return <div className="empty-state"><div className="empty-icon">✦</div><h3>Select a dataset first</h3><p>Choose a dataset to build an advanced BI dashboard.</p></div>;
 
   const kpis = dashboard?.kpis || [];
   const periodLabel = startDate || endDate ? `${startDate || "Dataset start"} — ${endDate || "Dataset end"}` : "All available dates";
+  const clearFilters = () => { setCountry("All"); setStartDate(""); setEndDate(""); setProduct(""); setQuarter(""); setWeekday(""); };
+  const exportCsv = () => {
+    const rows = [
+      ...kpis.map((item) => ({ section: "KPI", category: item.label, value: item.value })),
+      ...(dashboard?.country_revenue || []).map((item) => ({ section: "Country revenue", category: item.country, value: item.revenue })),
+      ...(dashboard?.product_revenue || []).map((item) => ({ section: "Product revenue", category: item.product, value: item.revenue })),
+      ...(dashboard?.monthly_revenue || []).map((item) => ({ section: "Monthly revenue", category: item.period, value: item.revenue })),
+      ...(dashboard?.quarterly_revenue || []).map((item) => ({ section: "Quarterly revenue", category: item.quarter, value: item.revenue })),
+      ...(dashboard?.weekday_revenue || []).map((item) => ({ section: "Weekday revenue", category: item.day, value: item.revenue })),
+      ...(dashboard?.customer_segments || []).map((item) => ({ section: "Customer segment", category: item.segment, value: item.revenue })),
+    ];
+    const quote = (value) => `"${String(value ?? "").replaceAll("\"", "\"\"")}"`;
+    const csv = ["Section,Category,Value", ...rows.map((row) => [row.section, row.category, row.value].map(quote).join(","))].join("\\r\\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob); const link = document.createElement("a");
+    link.href = url; link.download = `${(dataset.name || "datapilot-dashboard").replace(/[^a-z0-9-_]/gi, "-")}-filtered.csv`;
+    link.click(); URL.revokeObjectURL(url);
+  };
   return <section className="executive-bi advanced-bi">
     <header className="adv-header">
       <div><div className="adv-eyebrow"><span /> DATA PILOT / ANALYTICAL WORKSPACE</div><h1>Online Sales Dashboard</h1><p>Explore performance, revenue drivers, and customer behavior across your data.</p></div>
@@ -98,8 +122,9 @@ export default function ExecutiveDashboard({ dataset }) {
         <label><span>Country</span><select value={country} onChange={(e) => setCountry(e.target.value)}><option value="All">All countries</option>{(dashboard?.countries || []).map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
         <label><span>Invoice date · from</span><input type="date" value={startDate} min={dashboard?.date_min || undefined} max={endDate || dashboard?.date_max || undefined} onChange={(e) => setStartDate(e.target.value)} /></label>
         <label><span>Invoice date · to</span><input type="date" value={endDate} min={startDate || dashboard?.date_min || undefined} max={dashboard?.date_max || undefined} onChange={(e) => setEndDate(e.target.value)} /></label>
-        <button type="button" onClick={() => { setCountry("All"); setStartDate(""); setEndDate(""); }} className="adv-reset">Reset filters</button>
+        <button type="button" onClick={clearFilters} className="adv-reset">Reset filters</button>
       </div>
+      <div className="adv-export-actions"><button type="button" onClick={exportCsv} className="adv-export-button">↓ Export CSV</button><button type="button" onClick={() => window.print()} className="adv-export-button adv-export-primary">▣ Download PDF</button></div>
     </header>
     <div className="adv-dashboard-status"><span className={loading ? "adv-status-loading" : "adv-status-dot"} />{loading ? "Updating visuals…" : `Dataset loaded · ${number(dashboard?.dataset_rows)} filtered rows`}<span className="adv-status-period">{periodLabel}</span></div>
     {error && <div className="alert alert-warning">{error}<button className="text-button ms-2" onClick={() => { setCountry(country); }}>Retry by changing a filter</button></div>}
@@ -107,10 +132,10 @@ export default function ExecutiveDashboard({ dataset }) {
     <div className="adv-chart-grid">
       <article className="adv-panel adv-panel-wide"><div className="adv-panel-head"><div><span>REVENUE PERFORMANCE</span><h2>Monthly revenue trend</h2><p>Net revenue by month</p></div><strong className="adv-panel-tag">TREND</strong></div><TrendChart items={dashboard?.monthly_revenue || []} /></article>
       <article className="adv-panel"><div className="adv-panel-head"><div><span>MARKET DISTRIBUTION</span><h2>Revenue mix by country</h2><p>Click a slice or legend item to cross-filter the dashboard</p></div><strong className="adv-panel-tag">DONUT · INTERACTIVE</strong></div><DonutChart items={dashboard?.country_revenue || []} nameKey="country" selected={country !== "All" ? country : null} onSelect={(value) => setCountry(country === value ? "All" : value)} label="Revenue by country" /></article>
-      <article className="adv-panel"><div className="adv-panel-head"><div><span>PRODUCT PERFORMANCE</span><h2>Top 10 products by revenue</h2><p>Best performing product descriptions</p></div><strong className="adv-panel-tag">PRODUCTS</strong></div><BarList items={dashboard?.product_revenue || []} nameKey="product" accent="teal" /></article>
+      <article className="adv-panel"><div className="adv-panel-head"><div><span>PRODUCT PERFORMANCE</span><h2>Top 10 products by revenue</h2><p>Best performing product descriptions</p></div><strong className="adv-panel-tag">PRODUCTS</strong></div><BarList items={dashboard?.product_revenue || []} nameKey="product" accent="teal" selected={product || null} onSelect={(value) => setProduct(product === value ? "" : value)} /></article>
       <article className="adv-panel"><div className="adv-panel-head"><div><span>CUSTOMER INTELLIGENCE</span><h2>Customer segment mix</h2><p>Revenue contribution by inferred segment</p></div><strong className="adv-panel-tag">DONUT</strong></div><DonutChart items={dashboard?.customer_segments || []} nameKey="segment" label="Revenue by customer segment" /></article>
-      <article className="adv-panel"><div className="adv-panel-head"><div><span>TIME ANALYSIS</span><h2>Quarterly revenue</h2><p>Compare seasonal performance</p></div><strong className="adv-panel-tag">COLUMNS</strong></div><QuarterChart items={dashboard?.quarterly_revenue || []} /></article>
-      <article className="adv-panel adv-panel-wide"><div className="adv-panel-head"><div><span>WEEKLY PATTERN</span><h2>Revenue by day of week</h2><p>Identify strongest transaction days</p></div><strong className="adv-panel-tag">WEEKDAYS</strong></div><BarList items={dashboard?.weekday_revenue || []} nameKey="day" accent="orange" /></article>
+      <article className="adv-panel"><div className="adv-panel-head"><div><span>TIME ANALYSIS</span><h2>Quarterly revenue</h2><p>Compare seasonal performance</p></div><strong className="adv-panel-tag">COLUMNS</strong></div><QuarterChart items={dashboard?.quarterly_revenue || []} selected={quarter || null} onSelect={(value) => setQuarter(quarter === value ? "" : value)} /></article>
+      <article className="adv-panel adv-panel-wide"><div className="adv-panel-head"><div><span>WEEKLY PATTERN</span><h2>Revenue by day of week</h2><p>Identify strongest transaction days</p></div><strong className="adv-panel-tag">WEEKDAYS</strong></div><BarList items={dashboard?.weekday_revenue || []} nameKey="day" accent="orange" selected={weekday || null} onSelect={(value) => setWeekday(weekday === value ? "" : value)} /></article>
     </div>
     <footer className="adv-footer">DataPilot Advanced BI · Metrics recalculate when filters change. Customer segments are inferred from relative recency, order frequency, and revenue; they are not source dataset labels.</footer>
   </section>;
