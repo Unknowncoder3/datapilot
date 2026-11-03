@@ -3,7 +3,9 @@ from app.services.business_intelligence.column_mapper import map_business_column
 
 
 def build_advanced_dashboard(df: pd.DataFrame, country: str | None = None,
-                             start_date: str | None = None, end_date: str | None = None) -> dict:
+                             start_date: str | None = None, end_date: str | None = None,
+                             product: str | None = None, quarter: str | None = None,
+                             weekday: str | None = None) -> dict:
     mapping = map_business_columns(df)["mapping"]
     revenue_role = mapping.get("revenue")
     if isinstance(revenue_role, dict) and revenue_role.get("type") == "derived":
@@ -31,6 +33,9 @@ def build_advanced_dashboard(df: pd.DataFrame, country: str | None = None,
     frame["product"] = df[product_col].astype(str) if isinstance(product_col, str) and product_col in df.columns else "Unknown"
     product_name_col = mapping.get("product_name")
     frame["product_name"] = df[product_name_col].astype(str) if isinstance(product_name_col, str) and product_name_col in df.columns else frame["product"]
+    if "date" in frame.columns:
+        frame["quarter"] = "Q" + frame["date"].dt.quarter.astype("Int64").astype(str)
+        frame["weekday"] = frame["date"].dt.day_name()
 
     if country and country != "All":
         frame = frame[frame["country"] == country]
@@ -40,6 +45,12 @@ def build_advanced_dashboard(df: pd.DataFrame, country: str | None = None,
         end = pd.to_datetime(end_date, errors="coerce")
         if pd.notna(end):
             frame = frame[frame["date"] < end + pd.Timedelta(days=1)]
+    if product:
+        frame = frame[frame["product_name"] == product]
+    if quarter and "quarter" in frame.columns:
+        frame = frame[frame["quarter"] == quarter]
+    if weekday and "weekday" in frame.columns:
+        frame = frame[frame["weekday"] == weekday]
 
     revenue_sum = float(frame["revenue"].sum(skipna=True))
     order_count = int(frame["order"].nunique(dropna=True)) if frame["order"].notna().any() else None
