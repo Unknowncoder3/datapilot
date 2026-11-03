@@ -13,6 +13,7 @@ function DownloadExport({ dataset, profile, preview }) {
   const safeName = (dataset?.name || dataset?.original_filename || "datapilot-report").replace(/[^a-z0-9-_]/gi, "-");
   const rows = preview?.rows || preview?.data || [];
   const headers = preview?.columns || (rows[0] ? Object.keys(rows[0]) : []);
+  const downloadPdf = () => { setPrintDashboard(true); setSection("Executive BI"); };
   const downloadCsv = () => {
     if (!headers.length) { window.alert("No preview rows are available to export yet."); return; }
     const quote = (value) => `"${String(value ?? "").replaceAll('"', '""')}"`;
@@ -22,6 +23,8 @@ function DownloadExport({ dataset, profile, preview }) {
     link.href = url; link.download = `${safeName}-data-export.csv`; link.click(); URL.revokeObjectURL(url);
   };
   const downloadPng = () => {
+    const data = dashboardExportData;
+    if (!data) { window.alert("Open Executive BI once so the dashboard charts can load before exporting."); return; }
     const canvas = document.createElement("canvas"); canvas.width = 1600; canvas.height = 900;
     const ctx = canvas.getContext("2d");
     const bg = ctx.createLinearGradient(0,0,1600,900); bg.addColorStop(0,"#080b15"); bg.addColorStop(1,"#111a2d");
@@ -30,7 +33,7 @@ function DownloadExport({ dataset, profile, preview }) {
     ctx.fillStyle="#f2f5ff";ctx.font="bold 52px Arial";ctx.fillText("DataPilot AI",120,130);
     ctx.fillStyle="#8d9bb5";ctx.font="24px Arial";ctx.fillText("DATASET SNAPSHOT  /  "+(dataset?.name || dataset?.original_filename || "Selected dataset"),120,180);
     ctx.strokeStyle="#263650";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(90,230);ctx.lineTo(1510,230);ctx.stroke();
-    const metrics=[["ROWS ANALYZED",Number(dataset?.row_count||0).toLocaleString("en-IN")],["COLUMNS",Number(dataset?.column_count||0).toLocaleString("en-IN")],["DATA QUALITY",(profile?.quality_score ?? profile?.data_quality_score) == null ? "—" : (profile?.quality_score ?? profile?.data_quality_score)+"%"],["FILE TYPE",String(dataset?.file_type||dataset?.format||"Dataset").toUpperCase()]];
+    const metrics=(data.kpis||[]).slice(0,4).map((item)=>[String(item.label||"METRIC").toUpperCase(),item.format==="currency" ? "£"+Number(item.value||0).toLocaleString("en-GB",{maximumFractionDigits:2}) : Number(item.value||0).toLocaleString("en-IN")]);
     metrics.forEach((m,i)=>{const x=90+i*360;ctx.fillStyle="#111a2d";ctx.strokeStyle="#263650";ctx.fillRect(x,290,330,190);ctx.strokeRect(x,290,330,190);ctx.fillStyle="#e8c46e";ctx.font="bold 19px Arial";ctx.fillText(m[0],x+25,335);ctx.fillStyle="#f2f5ff";ctx.font="bold 42px Arial";ctx.fillText(m[1],x+25,405);ctx.fillStyle="#46c6b6";ctx.fillRect(x+25,445,75,5);});
     ctx.fillStyle="#8d9bb5";ctx.font="20px Arial";ctx.fillText("Generated in DataPilot AI · "+new Date().toLocaleDateString(),90,820);
     const link=document.createElement("a");link.download=`${safeName}-snapshot.png`;link.href=canvas.toDataURL("image/png");link.click();
@@ -39,7 +42,7 @@ function DownloadExport({ dataset, profile, preview }) {
   return <section className="export-studio">
     <div className="export-hero"><div><div className="export-eyebrow"><span/> DATAPILOT AI · REPORT STUDIO</div><h1>Download & Export</h1><p>Choose a format to take your analysis with you. Export options are designed to match your workflow.</p></div><div className="export-dataset-pill"><span>ACTIVE DATASET</span><strong>{dataset.name || dataset.original_filename}</strong><small>{Number(dataset.row_count||0).toLocaleString("en-IN")} rows · {Number(dataset.column_count||0).toLocaleString("en-IN")} columns</small></div></div>
     <div className="export-format-grid">
-      <article className="export-format-card export-pdf"><div className="export-card-top"><div className="export-format-icon">PDF</div><span className="export-format-badge">PRESENTATION READY</span></div><h2>PDF Report</h2><p>Print or save a polished report with the DataPilot dark theme. Use your browser's Save as PDF option.</p><ul><li>Branded report studio cover</li><li>Dataset snapshot and metadata</li><li>Optimized for landscape pages</li></ul><button onClick={()=>window.print()} className="export-action">⇩ Save PDF <span>→</span></button></article>
+      <article className="export-format-card export-pdf"><div className="export-card-top"><div className="export-format-icon">PDF</div><span className="export-format-badge">PRESENTATION READY</span></div><h2>PDF Report</h2><p>Print or save a polished report with the DataPilot dark theme. Use your browser's Save as PDF option.</p><ul><li>Branded report studio cover</li><li>Dataset snapshot and metadata</li><li>Optimized for landscape pages</li></ul><button onClick={downloadPdf} className="export-action">⇩ Export Executive BI PDF <span>→</span></button></article>
       <article className="export-format-card export-png"><div className="export-card-top"><div className="export-format-icon">PNG</div><span className="export-format-badge">HIGH RESOLUTION</span></div><h2>Dashboard Image</h2><p>Download a crisp branded snapshot to share in presentations, reports, or messages.</p><ul><li>1600 × 900 image</li><li>Dark navy with gradient accents</li><li>KPI summary tiles</li></ul><button onClick={downloadPng} className="export-action">⇩ Download PNG <span>→</span></button></article>
       <article className="export-format-card export-xls"><div className="export-card-top"><div className="export-format-icon">XLS</div><span className="export-format-badge">EXCEL COMPATIBLE</span></div><h2>Excel Data Export</h2><p>Export the available dataset preview as a CSV file that opens directly in Microsoft Excel.</p><ul><li>Column headers preserved</li><li>UTF-8 encoding</li><li>Easy to sort and analyze</li></ul><button onClick={downloadCsv} className="export-action" disabled={!headers.length}>⇩ Export CSV for Excel <span>→</span></button></article>
     </div>
@@ -61,6 +64,8 @@ function App() {
   const [query, setQuery] = useState("");
   const [section, setSection] = useState("Overview");
   const [theme, setTheme] = useState("dark");
+  const [dashboardExportData, setDashboardExportData] = useState(null);
+  const [printDashboard, setPrintDashboard] = useState(false);
   const fileRef = useRef(null);
 
   const refresh = async () => {
@@ -77,6 +82,12 @@ function App() {
   };
 
   useEffect(() => { refresh(); }, []);
+
+  useEffect(() => {
+    if (!printDashboard || section !== "Executive BI") return;
+    const frame = window.requestAnimationFrame(() => window.requestAnimationFrame(() => { window.print(); setPrintDashboard(false); }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [printDashboard, section]);
 
   useEffect(() => {
     if (!selected?.id) { setProfile(null); setPreview(null); return; }
@@ -178,7 +189,7 @@ function App() {
             </div>
           </>}
 
-          {section === "Executive BI" && <ExecutiveDashboard dataset={selected} />}
+          {section === "Executive BI" && <ExecutiveDashboard dataset={selected} onDashboardData={setDashboardExportData} />}
 
           {section === "Download & Export" && <DownloadExport dataset={selected} profile={profile} preview={preview} />}
 
