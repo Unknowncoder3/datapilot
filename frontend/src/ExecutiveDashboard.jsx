@@ -10,9 +10,37 @@ import {
 const unwrap = (response) => response?.data?.data ?? response?.data ?? {};
 const asArray = (value) => Array.isArray(value) ? value : Array.isArray(value?.items) ? value.items : Array.isArray(value?.results) ? value.results : [];
 const pretty = (value) => {
-  if (value == null) return "—";
-  if (typeof value === "number") return value.toLocaleString("en-IN", { maximumFractionDigits: 2 });
-  return String(value);
+  if (value == null || value === "") return "—";
+
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return String(value);
+
+  const absValue = Math.abs(numericValue);
+  const sign = numericValue < 0 ? "-" : "";
+
+  if (absValue >= 1_000_000) return `${sign}${(absValue / 1_000_000).toFixed(2)}M`;
+  if (absValue >= 10_000) return `${sign}${(absValue / 1_000).toFixed(1)}K`;
+
+  return numericValue.toLocaleString("en-IN", { maximumFractionDigits: 2 });
+};
+
+const currency = (value) => {
+  if (value == null || value === "") return "—";
+
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return String(value);
+
+  const absValue = Math.abs(numericValue);
+  const sign = numericValue < 0 ? "-£" : "£";
+
+  if (absValue >= 1_000_000) return `${sign}${(absValue / 1_000_000).toFixed(2)}M`;
+  if (absValue >= 1_000) return `${sign}${(absValue / 1_000).toFixed(1)}K`;
+
+  return numericValue.toLocaleString("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    maximumFractionDigits: 2,
+  });
 };
 const labelOf = (item, fallback) => item?.label ?? item?.name ?? item?.metric ?? item?.period ?? item?.month ?? item?.country ?? item?.title ?? fallback;
 const valueOf = (item) => {
@@ -70,10 +98,10 @@ export default function ExecutiveDashboard({ dataset }) {
     </div>
     <div className="bottom-grid">
       <div className="panel-card"><div className="panel-title"><div><h3>Sales trend</h3><p>{frequency === "month" ? "Monthly" : "Daily"} business performance</p></div><span className="panel-symbol">↗</span></div>
-        {trendItems.length ? <div className="bi-chart" role="img" aria-label="Sales trend bar visualization">{trendItems.slice(-16).map((item, index) => <div className="bi-bar-column" key={item.label + index}><div className="bi-bar-value">{pretty(item.value)}</div><div className="bi-bar-track"><div className="bi-bar" style={{ height: `${Math.max(4, Math.abs(item.value) / maxTrend * 100)}%` }} /></div><small>{item.label}</small></div>)}</div> : <div className="empty-inline">{loading ? "Loading trend…" : "Trend data is unavailable or has no numeric points."}</div>}
+        {trendItems.length ? <div className="bi-chart" role="img" aria-label="Sales trend bar visualization">{trendItems.slice(-16).map((item, index) => <div className="bi-bar-column" key={item.label + index}><div className="bi-bar-value">{currency(item.value)}</div><div className="bi-bar-track"><div className="bi-bar" style={{ height: `${Math.max(4, Math.abs(item.value) / maxTrend * 100)}%` }} /></div><small>{item.label}</small></div>)}</div> : <div className="empty-inline">{loading ? "Loading trend…" : "Trend data is unavailable or has no numeric points."}</div>}
       </div>
       <div className="panel-card"><div className="panel-title"><div><h3>Sales by country</h3><p>Leading markets in this dataset</p></div><span className="panel-symbol">◎</span></div>
-        {countryItems.length ? <div className="bi-list">{countryItems.map((item, index) => <div className="bi-list-row" key={labelOf(item, index)}><span><b>{index + 1}</b>{labelOf(item, `Country ${index + 1}`)}</span><strong>{pretty(valueOf(item) ?? item?.formatted_value ?? "—")}</strong></div>)}</div> : <div className="empty-inline">{loading ? "Loading markets…" : "Country breakdown is unavailable."}</div>}
+        {countryItems.length ? <div className="bi-list">{countryItems.map((item, index) => <div className="bi-list-row" key={labelOf(item, index)}><span><b>{index + 1}</b>{labelOf(item, `Country ${index + 1}`)}</span><strong>{currency(valueOf(item) ?? item?.formatted_value ?? "—")}</strong></div>)}</div> : <div className="empty-inline">{loading ? "Loading markets…" : "Country breakdown is unavailable."}</div>}
       </div>
     </div>
     <div className="panel-card mt-3"><div className="panel-title"><div><h3>Automated business insights</h3><p>Rule-based observations generated from the selected dataset</p></div><span className="panel-symbol">✧</span></div>
