@@ -29,7 +29,7 @@ function App() {
     try {
       const [healthResult, listResult] = await Promise.all([getHealth(), getDatasets()]);
       setHealth(healthResult.data?.status === "ok");
-      const items = Array.isArray(listResult.data) ? listResult.data : listResult.data?.datasets ?? [];
+      const items = Array.isArray(listResult.data) ? listResult.data : listResult.data?.items ?? listResult.data?.datasets ?? [];
       setDatasets(items);
       if (items.length && !selected) setSelected(items[0]);
     } catch (err) {
@@ -43,7 +43,13 @@ function App() {
     if (!selected?.id) { setProfile(null); setPreview(null); return; }
     let active = true;
     Promise.all([getProfile(selected.id), getPreview(selected.id)])
-      .then(([p, v]) => { if (active) { setProfile(unwrap(p.data)); setPreview(unwrap(v.data)); } })
+      .then(([p, v]) => {
+        if (active) {
+          const payload = unwrap(p.data);
+          setProfile(payload?.profile ? { ...payload.profile, dataset: payload.dataset } : payload);
+          setPreview(unwrap(v.data));
+        }
+      })
       .catch(() => { if (active) { setProfile(null); setPreview(null); } });
     return () => { active = false; };
   }, [selected?.id]);

@@ -1,0 +1,11 @@
+order_id,product,category,city,quantity,revenue,order_date
+1001,Laptop,Electronics,Kolkata,2,100000,2026-01-01
+1002,Phone,Electronics,Delhi,3,60000,2026-01-02
+1003,Chair,Furniture,Mumbai,4,20000,2026-01-03
+1004,Laptop,Electronics,Kolkata,1,50000,2026-01-04
+1005,Table,Furniture,Delhi,2,30000,2026-01-05
+1006,Phone,Electronics,Kolkata,2,40000,2026-01-06
+1007,Chair,Furniture,Mumbai,3,15000,2026-01-07
+1008,Monitor,Electronics,Delhi,2,30000,2026-01-08
+1009,Laptop,Electronics,Kolkata,1,50000,2026-01-09
+1010,Table,Furniture,Mumbai,2,30000,2026-01-10

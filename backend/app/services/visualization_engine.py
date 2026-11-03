@@ -1,3 +1,5 @@
+
+import json
 import pandas as pd
 import plotly.express as px
 
@@ -179,5 +181,5 @@ def build_chart(
     return {
         "chart_type": chart_type,
         "data_points": int(len(data)),
-        "figure": fig.to_dict(),
+        "figure": json.loads(fig.to_json()),
     }

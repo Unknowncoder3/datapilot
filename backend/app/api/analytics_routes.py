@@ -1,4 +1,5 @@
 from pathlib import Path
+from threading import Lock
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -30,6 +31,12 @@ def _get_dataset_path(dataset_id: int, db: Session) -> Path:
     return path
 
 
+# In-memory dataset cache.
+# Cache entries are invalidated when the file path, size, or modification time changes.
+_dataset_cache: dict[int, tuple[str, int, int, object]] = {}
+_dataset_cache_lock = Lock()
+
+
 def _load_dataset(dataset_id: int, db: Session):
     path = _get_dataset_path(dataset_id, db)
     db.close()
@@ -38,7 +45,33 @@ def _load_dataset(dataset_id: int, db: Session):
         raise HTTPException(status_code=404, detail="Dataset file is missing from storage.")
 
     try:
-        return read_dataset(path)
+        stat = path.stat()
+        cache_key = (str(path), stat.st_mtime_ns, stat.st_size)
+
+        with _dataset_cache_lock:
+            cached = _dataset_cache.get(dataset_id)
+
+            if cached is not None and cached[:3] == cache_key:
+                # Return a copy so downstream analytics cannot modify the cached frame.
+                return cached[3].copy(deep=True)
+
+            df = read_dataset(path)
+            _dataset_cache[dataset_id] = (*cache_key, df)
+
+            # Remove stale cache entries for other dataset IDs only if their
+            # files have disappeared. This avoids retaining deleted uploads.
+            stale_ids = [
+                cached_id
+                for cached_id, entry in _dataset_cache.items()
+                if cached_id != dataset_id and not Path(entry[0]).is_file()
+            ]
+            for stale_id in stale_ids:
+                _dataset_cache.pop(stale_id, None)
+
+            return df.copy(deep=True)
+
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(status_code=422, detail="Could not read dataset.") from exc
 
