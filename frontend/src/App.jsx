@@ -211,7 +211,8 @@ function App() {
 
           {section === "Executive BI" && <ExecutiveDashboard dataset={selected} onDashboardData={setDashboardExportData} />}
 
-          {section === "Download & Export" && <DownloadExport dataset={selected} profile={profile} preview={preview} dashboardExportData={dashboardExportData} onPdfExport={() => { setDashboardExportData(null); setPrintDashboard(true); setSection("Executive BI"); }} />}
+          {section === "Download & Export" && <DownloadExport dataset={selected} profile={profile} preview={preview} dashboardExportData={dashboardExportData} />}
+          {section === "Download & Export" && !dashboardExportData && selected && <div style={{display:"none"}}><ExecutiveDashboard dataset={selected} onDashboardData={setDashboardExportData}/></div>}
 
           {section === "Datasets" && <>
             <div className="page-heading"><div><div className="eyebrow">DATA MANAGEMENT</div><h1>Your datasets</h1><p>Upload, organize and inspect your data sources.</p></div><button className="primary-button" onClick={() => fileRef.current?.click()}>＋ Upload dataset</button></div>
