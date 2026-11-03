@@ -171,3 +171,28 @@
 .adv-quarter-column i{display:block;width:min(75%,48px);border-radius:5px 5px 0 0;background:linear-gradient(180deg,#8fa4ff,#6679f5 55%,#46c6b6);box-shadow:0 0 14px #7889ff22;transition:height .4s ease;min-height:3px}
 .adv-quarter-column b{font-size:9px;color:var(--adv-text);padding-bottom:7px}
 @media(max-width:760px){.adv-donut-layout{grid-template-columns:1fr;gap:8px}.adv-donut-wrap{max-width:175px}.adv-donut-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.adv-quarter-chart{height:190px}}
+
+
+/* BI interactive cross-filter states and report export controls */
+.adv-export-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+.adv-export-button{border:1px solid var(--adv-border);background:var(--adv-panel);color:var(--adv-text);border-radius:8px;padding:9px 12px;font-size:10px;font-weight:700;letter-spacing:.15px;transition:transform .18s,border-color .18s,background .18s}
+.adv-export-button:hover{transform:translateY(-1px);border-color:var(--adv-blue);background:var(--adv-panel2)}
+.adv-export-primary{background:linear-gradient(135deg,#7889ff,#5b6de8);border-color:transparent;color:#fff}
+.adv-clickable{cursor:pointer;outline:none;transition:opacity .18s,transform .18s}
+.adv-clickable:hover{transform:translateY(-1px)}
+.adv-clickable:focus-visible{outline:2px solid var(--adv-blue);outline-offset:3px;border-radius:5px}
+.adv-selected{filter:drop-shadow(0 0 5px #7889ff66);}
+.adv-selected .adv-bar-track,.adv-selected .adv-quarter-column i{outline:1px solid #aab4ff}
+@media(max-width:760px){.adv-export-actions{justify-content:stretch}.adv-export-button{flex:1;padding:8px 5px}}
+@media print{
+  @page{size:landscape;margin:10mm}
+  body,.app-shell,.main-panel,.content-area{background:#fff!important;color:#111!important}
+  .sidebar,.topbar,.adv-export-actions,.adv-filter-panel,.footer-note{display:none!important}
+  .content-area{max-width:none!important;padding:0!important}
+  .advanced-bi{background:#fff!important;color:#111!important;padding:0!important;border:0!important}
+  .adv-header h1,.adv-panel-head h2,.adv-kpi-value,.adv-kpi-label,.adv-bar-label span,.adv-bar-label b,.adv-quarter-column b,.adv-donut-legend button span,.adv-donut-legend button b{color:#111!important}
+  .adv-panel,.adv-kpi-card{background:#fff!important;border:1px solid #bbb!important;break-inside:avoid}
+  .adv-chart-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .adv-panel-wide{grid-column:span 2!important}
+  .adv-dashboard-status{color:#333!important}
+}
