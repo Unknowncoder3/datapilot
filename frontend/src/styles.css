@@ -360,3 +360,24 @@
 .gallery-segment-visual b{white-space:nowrap;font-size:6px}
 .gallery-quarter-bars{width:100%;height:78px;display:block;margin-top:7px}
 @media(max-width:700px){.gallery-dashboard-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.gallery-dashboard-main,.gallery-dashboard-bottom{grid-template-columns:1fr}.gallery-dashboard-title h4{font-size:14px}.gallery-revenue-panel svg{height:75px}}
+
+
+/* Phase 5.5 — personalized dashboard layout editor */
+.adv-layout-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 15px;padding:13px 15px;border:1px solid var(--adv-border);border-radius:12px;background:linear-gradient(110deg,var(--adv-panel),color-mix(in srgb,var(--adv-panel) 70%,#7889ff 10%))}
+.adv-layout-toolbar>div:first-child{display:flex;align-items:center;gap:10px;min-width:0}
+.adv-layout-spark{display:grid;place-items:center;width:30px;height:30px;flex:none;border:1px solid #7889ff40;border-radius:9px;background:#7889ff18;color:#9ba8ff;font-size:15px}
+.adv-layout-toolbar strong{display:block;font:700 11px "Space Grotesk",sans-serif;color:var(--adv-text)}
+.adv-layout-toolbar small{display:block;margin-top:3px;font-size:9px;color:var(--adv-muted)}
+.adv-layout-actions{display:flex;align-items:center;gap:8px;flex:none}
+.adv-layout-toggle,.adv-layout-reset{border:1px solid var(--adv-border);border-radius:8px;background:var(--adv-panel2);color:var(--adv-text);padding:9px 12px;font-size:10px;font-weight:800;transition:background .18s,border-color .18s,transform .18s}
+.adv-layout-toggle:hover,.adv-layout-reset:hover{border-color:var(--adv-blue);transform:translateY(-1px)}
+.adv-layout-toggle.is-active{background:linear-gradient(135deg,#7889ff,#5b6de8);border-color:transparent;color:#fff}
+.adv-layout-editing .adv-layout-panel{border-style:dashed;border-color:#7889ff88;cursor:grab;position:relative;padding-top:44px}
+.adv-layout-editing .adv-layout-panel:active{cursor:grabbing}
+.adv-panel-dragging{opacity:.48;transform:scale(.99)}
+.adv-panel-layout-controls{position:absolute;top:9px;left:10px;right:10px;display:flex;align-items:center;gap:5px;z-index:2}
+.adv-panel-layout-controls span{margin-right:auto;font-size:9px;font-weight:800;letter-spacing:.3px;color:#9ba8ff}
+.adv-panel-layout-controls button{display:grid;place-items:center;width:25px;height:25px;border:1px solid #7889ff55;border-radius:6px;background:#7889ff16;color:var(--adv-text);font-size:12px;font-weight:800}
+.adv-panel-layout-controls button:disabled{opacity:.25;cursor:not-allowed}
+.adv-panel-layout-controls button:not(:disabled):hover{background:#7889ff40}
+@media(max-width:760px){.adv-layout-toolbar{align-items:flex-start;flex-direction:column}.adv-layout-actions{width:100%}.adv-layout-toggle{flex:1}.adv-layout-editing .adv-layout-panel{padding-top:42px}}
