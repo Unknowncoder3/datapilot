@@ -74,6 +74,41 @@ export default function ExecutiveDashboard({ dataset, onDashboardData }) {
   const [weekday, setWeekday] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [layoutEditing, setLayoutEditing] = useState(false);
+  const [draggingPanel, setDraggingPanel] = useState("");
+  const [layoutReady, setLayoutReady] = useState(false);
+  const defaultPanelOrder = ["monthly", "country", "products", "segments", "quarterly", "weekday"];
+  const [panelOrder, setPanelOrder] = useState(defaultPanelOrder);
+
+  useEffect(() => {
+    setLayoutReady(false);
+    try {
+      const saved = window.localStorage.getItem(`datapilot-bi-layout-${dataset?.id}`);
+      const parsed = saved ? JSON.parse(saved) : null;
+      setPanelOrder(Array.isArray(parsed) && parsed.length === defaultPanelOrder.length &&
+        defaultPanelOrder.every((id) => parsed.includes(id)) ? parsed : defaultPanelOrder);
+    } catch {
+      setPanelOrder(defaultPanelOrder);
+    } finally {
+      setLayoutReady(true);
+    }
+  }, [dataset?.id]);
+
+  useEffect(() => {
+    if (!dataset?.id || !layoutReady) return;
+    window.localStorage.setItem(`datapilot-bi-layout-${dataset.id}`, JSON.stringify(panelOrder));
+  }, [dataset?.id, layoutReady, panelOrder]);
+
+  const movePanel = (panelId, direction) => {
+    setPanelOrder((current) => {
+      const index = current.indexOf(panelId), target = index + direction;
+      if (index < 0 || target < 0 || target >= current.length) return current;
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+  const resetPanelLayout = () => setPanelOrder(defaultPanelOrder);
 
   useEffect(() => {
     if (!dataset?.id) { setDashboard(null); return; }
@@ -131,13 +166,47 @@ export default function ExecutiveDashboard({ dataset, onDashboardData }) {
     <div className="adv-dashboard-status"><span className={loading ? "adv-status-loading" : "adv-status-dot"} />{loading ? "Updating visuals…" : `Dataset loaded · ${number(dashboard?.dataset_rows)} filtered rows`}<span className="adv-status-period">{periodLabel}</span></div>
     {error && <div className="alert alert-warning">{error}<button className="text-button ms-2" onClick={() => { setCountry(country); }}>Retry by changing a filter</button></div>}
     <div className="adv-kpi-grid">{kpis.map((item, i) => <article className={`adv-kpi-card adv-kpi-${i}`} key={item.label}><div className="adv-kpi-label">{item.label}</div><div className="adv-kpi-value">{item.format === "currency" ? money(item.value) : number(item.value)}</div><div className="adv-kpi-bottom"><span />Dataset calculated metric</div></article>)}</div>
-    <div className="adv-chart-grid">
-      <article className="adv-panel adv-panel-wide"><div className="adv-panel-head"><div><span>REVENUE PERFORMANCE</span><h2>Monthly revenue trend</h2><p>Net revenue by month</p></div><strong className="adv-panel-tag">TREND</strong></div><TrendChart items={dashboard?.monthly_revenue || []} /></article>
-      <article className="adv-panel"><div className="adv-panel-head"><div><span>MARKET DISTRIBUTION</span><h2>Revenue mix by country</h2><p>Click a slice or legend item to cross-filter the dashboard</p></div><strong className="adv-panel-tag">DONUT · INTERACTIVE</strong></div><DonutChart items={dashboard?.country_revenue || []} nameKey="country" selected={country !== "All" ? country : null} onSelect={(value) => setCountry(country === value ? "All" : value)} label="Revenue by country" /></article>
-      <article className="adv-panel"><div className="adv-panel-head"><div><span>PRODUCT PERFORMANCE</span><h2>Top 10 products by revenue</h2><p>Best performing product descriptions</p></div><strong className="adv-panel-tag">PRODUCTS</strong></div><BarList items={dashboard?.product_revenue || []} nameKey="product" accent="teal" selected={product || null} onSelect={(value) => setProduct(product === value ? "" : value)} /></article>
-      <article className="adv-panel"><div className="adv-panel-head"><div><span>CUSTOMER INTELLIGENCE</span><h2>Customer segment mix</h2><p>Revenue contribution by inferred segment</p></div><strong className="adv-panel-tag">DONUT</strong></div><DonutChart items={dashboard?.customer_segments || []} nameKey="segment" label="Revenue by customer segment" /></article>
-      <article className="adv-panel"><div className="adv-panel-head"><div><span>TIME ANALYSIS</span><h2>Quarterly revenue</h2><p>Compare seasonal performance</p></div><strong className="adv-panel-tag">COLUMNS</strong></div><QuarterChart items={dashboard?.quarterly_revenue || []} selected={quarter || null} onSelect={(value) => setQuarter(quarter === value ? "" : value)} /></article>
-      <article className="adv-panel adv-panel-wide"><div className="adv-panel-head"><div><span>WEEKLY PATTERN</span><h2>Revenue by day of week</h2><p>Identify strongest transaction days</p></div><strong className="adv-panel-tag">WEEKDAYS</strong></div><BarList items={dashboard?.weekday_revenue || []} nameKey="day" accent="orange" selected={weekday || null} onSelect={(value) => setWeekday(weekday === value ? "" : value)} /></article>
+    <div className="adv-layout-toolbar">
+      <div><span className="adv-layout-spark">✦</span><div><strong>Dashboard layout</strong><small>{layoutEditing ? "Rearrange panels with drag-and-drop or arrow controls." : "Customize the chart order to match your workflow."}</small></div></div>
+      <div className="adv-layout-actions">
+        {layoutEditing && <button type="button" onClick={resetPanelLayout} className="adv-layout-reset">Reset layout</button>}
+        <button type="button" onClick={() => { setLayoutEditing((value) => !value); setDraggingPanel(""); }} className={`adv-layout-toggle ${layoutEditing ? "is-active" : ""}`}>{layoutEditing ? "✓ Done editing" : "↕ Customize layout"}</button>
+      </div>
+    </div>
+    <div className={`adv-chart-grid ${layoutEditing ? "adv-layout-editing" : ""}`}>
+      {panelOrder.map((panelId, index) => {
+        const panelProps = {
+          draggable: layoutEditing,
+          onDragStart: (event) => { setDraggingPanel(panelId); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", panelId); },
+          onDragOver: (event) => { if (layoutEditing) event.preventDefault(); },
+          onDrop: (event) => {
+            event.preventDefault();
+            const source = event.dataTransfer.getData("text/plain") || draggingPanel;
+            if (!source || source === panelId) return;
+            setPanelOrder((current) => {
+              const next = [...current], from = next.indexOf(source), to = next.indexOf(panelId);
+              if (from < 0 || to < 0) return current;
+              next.splice(from, 1); next.splice(to, 0, source); return next;
+            });
+            setDraggingPanel("");
+          },
+          onDragEnd: () => setDraggingPanel(""),
+          className: `adv-panel ${["monthly", "weekday"].includes(panelId) ? "adv-panel-wide" : ""} ${layoutEditing ? "adv-layout-panel" : ""} ${draggingPanel === panelId ? "adv-panel-dragging" : ""}`,
+          key: panelId
+        };
+        const controls = layoutEditing && <div className="adv-panel-layout-controls" aria-label={`Reorder ${panelId} panel`}>
+          <span>⠿ Move</span><button type="button" disabled={index === 0} onClick={() => movePanel(panelId, -1)} aria-label="Move panel up">↑</button><button type="button" disabled={index === panelOrder.length - 1} onClick={() => movePanel(panelId, 1)} aria-label="Move panel down">↓</button>
+        </div>;
+        const panelContent = {
+          monthly: <><div className="adv-panel-head"><div><span>REVENUE PERFORMANCE</span><h2>Monthly revenue trend</h2><p>Net revenue by month</p></div><strong className="adv-panel-tag">TREND</strong></div><TrendChart items={dashboard?.monthly_revenue || []} /></>,
+          country: <><div className="adv-panel-head"><div><span>MARKET DISTRIBUTION</span><h2>Revenue mix by country</h2><p>Click a slice or legend item to cross-filter the dashboard</p></div><strong className="adv-panel-tag">DONUT · INTERACTIVE</strong></div><DonutChart items={dashboard?.country_revenue || []} nameKey="country" selected={country !== "All" ? country : null} onSelect={(value) => setCountry(country === value ? "All" : value)} label="Revenue by country" /></>,
+          products: <><div className="adv-panel-head"><div><span>PRODUCT PERFORMANCE</span><h2>Top 10 products by revenue</h2><p>Best performing product descriptions</p></div><strong className="adv-panel-tag">PRODUCTS</strong></div><BarList items={dashboard?.product_revenue || []} nameKey="product" accent="teal" selected={product || null} onSelect={(value) => setProduct(product === value ? "" : value)} /></>,
+          segments: <><div className="adv-panel-head"><div><span>CUSTOMER INTELLIGENCE</span><h2>Customer segment mix</h2><p>Revenue contribution by inferred segment</p></div><strong className="adv-panel-tag">DONUT</strong></div><DonutChart items={dashboard?.customer_segments || []} nameKey="segment" label="Revenue by customer segment" /></>,
+          quarterly: <><div className="adv-panel-head"><div><span>TIME ANALYSIS</span><h2>Quarterly revenue</h2><p>Compare seasonal performance</p></div><strong className="adv-panel-tag">COLUMNS</strong></div><QuarterChart items={dashboard?.quarterly_revenue || []} selected={quarter || null} onSelect={(value) => setQuarter(quarter === value ? "" : value)} /></>,
+          weekday: <><div className="adv-panel-head"><div><span>WEEKLY PATTERN</span><h2>Revenue by day of week</h2><p>Identify strongest transaction days</p></div><strong className="adv-panel-tag">WEEKDAYS</strong></div><BarList items={dashboard?.weekday_revenue || []} nameKey="day" accent="orange" selected={weekday || null} onSelect={(value) => setWeekday(weekday === value ? "" : value)} /></>
+        };
+        return <article {...panelProps}>{controls}{panelContent[panelId]}</article>;
+      })}
     </div>
     <footer className="adv-footer">DataPilot Advanced BI · Metrics recalculate when filters change. Customer segments are inferred from relative recency, order frequency, and revenue; they are not source dataset labels.</footer>
   </section>;
