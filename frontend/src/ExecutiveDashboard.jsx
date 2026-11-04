@@ -167,7 +167,7 @@ export default function ExecutiveDashboard({ dataset, onDashboardData }) {
         <label><span>Invoice date · to</span><input type="date" value={endDate} min={startDate || dashboard?.date_min || undefined} max={dashboard?.date_max || undefined} onChange={(e) => setEndDate(e.target.value)} /></label>
         <button type="button" onClick={clearFilters} className="adv-reset">Reset filters</button>
       </div>
-      <div className="adv-export-actions"><button type="button" onClick={() => window.print()} className="adv-export-button adv-export-primary">↓ Export branded PDF</button><button type="button" onClick={exportCsv} className="adv-export-button">↓ Export CSV</button></div>
+      <div className="adv-export-actions"><button type="button" onClick={exportCsv} className="adv-export-button">↓ Export CSV</button></div>
     </header>
     <div className="adv-dashboard-status"><span className={loading ? "adv-status-loading" : "adv-status-dot"} />{loading ? "Updating visuals…" : `Dataset loaded · ${number(dashboard?.dataset_rows)} filtered rows`}<span className="adv-status-period">{periodLabel}</span></div>
     <section className="adv-ai-ask" aria-label="Ask DataPilot">
