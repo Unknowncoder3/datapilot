@@ -314,3 +314,49 @@
 .gallery-downloads button{padding:11px 12px;border-radius:9px;font-size:10px;letter-spacing:.1px;transition:transform .18s,background .18s,border-color .18s}
 .gallery-downloads button:hover{transform:translateY(-1px);background:#ffffff14;border-color:currentColor}
 @media(max-width:700px){.gallery-card{padding:13px}.gallery-preview-line svg{height:72px}}
+
+/* Enterprise-style live dashboard thumbnail previews in the export gallery */
+.gallery-dashboard-preview{border:1px solid;border-radius:10px;padding:10px;overflow:hidden;box-shadow:inset 0 1px #ffffff0b}
+.gallery-dashboard-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:7px;letter-spacing:1px;color:#8494b4;font-weight:900;border-bottom:1px solid #7184ff30;padding-bottom:8px}
+.gallery-dashboard-toolbar>div{display:flex;align-items:center;gap:5px}
+.gallery-live-dot{width:5px;height:5px;border-radius:50%;background:#44c9b4;box-shadow:0 0 7px #44c9b4}
+.gallery-dashboard-toolbar b{font-size:7px;letter-spacing:.6px;opacity:.7}
+.gallery-dashboard-title{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:9px 0 10px}
+.gallery-dashboard-title h4{font:800 16px "Space Grotesk",sans-serif;letter-spacing:-.45px;margin:0}
+.gallery-dashboard-title p{font-size:8px;opacity:.68;margin:3px 0 0}
+.gallery-filter-chip{font-size:7px;font-weight:800;border:1px solid #7184ff30;border-radius:5px;padding:6px 7px;white-space:nowrap;opacity:.75}
+.gallery-dashboard-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin-bottom:7px}
+.gallery-dashboard-kpis>div{min-width:0;border:1px solid;border-radius:6px;padding:7px 6px}
+.gallery-dashboard-kpis small,.gallery-dashboard-kpis strong,.gallery-dashboard-kpis em{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gallery-dashboard-kpis small{font-size:6px;letter-spacing:.4px;font-weight:900}
+.gallery-dashboard-kpis strong{font:700 11px "Space Grotesk",sans-serif;margin-top:5px}
+.gallery-dashboard-kpis em{font-size:5px;font-style:normal;margin-top:4px;opacity:.65}
+.gallery-dashboard-main{display:grid;grid-template-columns:1.55fr 1fr;gap:6px}
+.gallery-dashboard-panel{min-width:0;border:1px solid #7184ff24;border-radius:7px;padding:8px;background:#ffffff03}
+.gallery-panel-label{font-size:6px;letter-spacing:.9px;font-weight:900}
+.gallery-dashboard-panel h5{font:700 10px "Space Grotesk",sans-serif;margin:4px 0 2px;letter-spacing:-.2px}
+.gallery-dashboard-panel>p{font-size:7px;opacity:.6;margin:0 0 4px}
+.gallery-revenue-panel svg{display:block;width:100%;height:90px;margin-top:4px}
+.gallery-axis-labels{display:flex;justify-content:space-between;font-size:5px;opacity:.55}
+.gallery-country-visual{display:grid;grid-template-columns:38% 62%;align-items:center;gap:5px;margin-top:10px}
+.gallery-country-visual>svg{width:100%;filter:drop-shadow(0 2px 4px #0002)}
+.gallery-country-visual>div{display:grid;gap:5px}
+.gallery-country-visual>div>div{display:flex;align-items:center;gap:4px;font-size:6px;min-width:0}
+.gallery-country-visual i{width:5px;height:5px;border-radius:2px;flex:none}
+.gallery-country-visual span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.75}
+.gallery-country-visual b{margin-left:auto;white-space:nowrap;font-size:6px}
+.gallery-dashboard-bottom{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:6px;margin-top:6px}
+.gallery-mini-bar{margin-top:7px}
+.gallery-mini-bar>div{display:flex;justify-content:space-between;gap:4px;font-size:6px;margin-bottom:3px}
+.gallery-mini-bar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.78}
+.gallery-mini-bar b{white-space:nowrap;font-size:6px}
+.gallery-mini-bar>i{display:block;height:4px;border-radius:4px;background:#ffffff12;overflow:hidden}
+.gallery-mini-bar>i>em{display:block;height:100%;border-radius:4px}
+.gallery-segment-visual{display:grid;grid-template-columns:40% 60%;align-items:center;gap:5px;margin-top:9px}
+.gallery-segment-visual svg{width:100%}
+.gallery-segment-visual>div{display:grid;gap:7px}
+.gallery-segment-visual>div>div{display:flex;justify-content:space-between;gap:4px;font-size:6px}
+.gallery-segment-visual span{opacity:.7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gallery-segment-visual b{white-space:nowrap;font-size:6px}
+.gallery-quarter-bars{width:100%;height:78px;display:block;margin-top:7px}
+@media(max-width:700px){.gallery-dashboard-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.gallery-dashboard-main,.gallery-dashboard-bottom{grid-template-columns:1fr}.gallery-dashboard-title h4{font-size:14px}.gallery-revenue-panel svg{height:75px}}
