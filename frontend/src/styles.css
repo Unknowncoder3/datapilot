@@ -381,3 +381,35 @@
 .adv-panel-layout-controls button:disabled{opacity:.25;cursor:not-allowed}
 .adv-panel-layout-controls button:not(:disabled):hover{background:#7889ff40}
 @media(max-width:760px){.adv-layout-toolbar{align-items:flex-start;flex-direction:column}.adv-layout-actions{width:100%}.adv-layout-toggle{flex:1}.adv-layout-editing .adv-layout-panel{padding-top:42px}}
+
+
+/* Phase 5.6 — Natural language analytics */
+.adv-ai-ask{margin:18px 0 20px;padding:20px;border:1px solid #7889ff35;border-radius:16px;background:radial-gradient(ellipse at 8% 0%,#7889ff12,transparent 55%),linear-gradient(145deg,var(--adv-panel),color-mix(in srgb,var(--adv-panel) 88%,#7889ff 12%));box-shadow:0 12px 35px #00000012}
+.adv-ai-ask-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:15px}
+.adv-ai-kicker{font-size:9px;font-weight:900;letter-spacing:1.2px;color:#7f91ff}
+.adv-ai-ask-head h2{margin:5px 0 4px;font:700 17px "Space Grotesk",sans-serif;color:var(--adv-text)}
+.adv-ai-ask-head p{margin:0;color:var(--adv-muted);font-size:11px}
+.adv-ai-chip{flex:none;padding:6px 9px;border:1px solid #7889ff38;border-radius:7px;background:#7889ff12;color:#91a0ff;font-size:8px;font-weight:900;letter-spacing:.7px}
+.adv-ai-ask-form{display:flex;gap:9px;padding:6px;border:1px solid var(--adv-border);border-radius:11px;background:var(--adv-panel2)}
+.adv-ai-ask-form input{flex:1;min-width:0;border:0;outline:0;background:transparent;padding:10px 12px;color:var(--adv-text);font-size:12px}
+.adv-ai-ask-form input::placeholder{color:var(--adv-muted)}
+.adv-ai-ask-form button{flex:none;border:0;border-radius:8px;padding:10px 15px;background:linear-gradient(135deg,#7889ff,#5869e5);color:#fff;font-size:10px;font-weight:900;box-shadow:0 4px 14px #7889ff30}
+.adv-ai-ask-form button:disabled{opacity:.55;cursor:not-allowed}
+.adv-ai-suggestions{display:flex;flex-wrap:wrap;gap:7px;margin-top:11px}
+.adv-ai-suggestions button{border:1px solid var(--adv-border);border-radius:20px;background:var(--adv-panel2);color:var(--adv-muted);padding:6px 10px;font-size:9px;transition:all .18s}
+.adv-ai-suggestions button:hover{border-color:#7889ff80;color:var(--adv-text);background:#7889ff12}
+.adv-ai-error{margin-top:12px;padding:10px 12px;border-radius:8px;background:#fb71851a;color:#fb7185;font-size:11px}
+.adv-ai-answer{margin-top:15px;padding:14px;border:1px solid #35cbb238;border-radius:11px;background:color-mix(in srgb,var(--adv-panel2) 90%,#35cbb2 10%)}
+.adv-ai-answer-label{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.adv-ai-answer-label span{font-size:9px;font-weight:900;letter-spacing:.8px;color:#35cbb2}
+.adv-ai-answer-label small{font-size:9px;color:var(--adv-muted)}
+.adv-ai-answer>p{margin:0 0 10px;color:var(--adv-text);font-size:12px;line-height:1.6}
+.adv-ai-metric{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;border-radius:8px;background:var(--adv-panel);border:1px solid var(--adv-border)}
+.adv-ai-metric span{font-size:10px;color:var(--adv-muted)}.adv-ai-metric strong{font:700 19px "Space Grotesk",sans-serif;color:var(--adv-text)}
+.adv-ai-chart-list{margin-top:12px}.adv-ai-chart-list h3{margin:0 0 10px;color:var(--adv-text);font:700 12px "Space Grotesk",sans-serif}
+.adv-ai-chart-row{display:grid;grid-template-columns:minmax(80px,1fr) minmax(60px,2fr) auto;align-items:center;gap:10px;margin:8px 0;font-size:10px}
+.adv-ai-chart-row>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--adv-muted)}
+.adv-ai-chart-row>i{height:7px;border-radius:10px;background:var(--adv-border);overflow:hidden}
+.adv-ai-chart-row>i>b{display:block;height:100%;border-radius:10px;background:linear-gradient(90deg,#7889ff,#35cbb2)}
+.adv-ai-chart-row>strong{color:var(--adv-text);font-size:10px}
+@media(max-width:640px){.adv-ai-ask{padding:14px}.adv-ai-ask-head{flex-direction:column}.adv-ai-ask-form{flex-direction:column}.adv-ai-ask-form button{padding:12px}.adv-ai-chart-row{grid-template-columns:minmax(65px,1fr) minmax(45px,1.4fr) auto}}
