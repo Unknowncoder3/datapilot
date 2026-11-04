@@ -34,7 +34,7 @@ def build_advanced_dashboard(df: pd.DataFrame, country: str | None = None,
     product_name_col = mapping.get("product_name")
     frame["product_name"] = df[product_name_col].astype(str) if isinstance(product_name_col, str) and product_name_col in df.columns else frame["product"]
     if "date" in frame.columns:
-        frame["quarter"] = "Q" + frame["date"].dt.quarter.astype("Int64").astype(str)
+        frame["quarter"] = frame["date"].dt.to_period("Q").astype(str)
         frame["weekday"] = frame["date"].dt.day_name()
 
     if country and country != "All":
@@ -78,10 +78,10 @@ def build_advanced_dashboard(df: pd.DataFrame, country: str | None = None,
         dated = frame.dropna(subset=["date"]).copy()
         if not dated.empty:
             dated["month"] = dated["date"].dt.to_period("M").astype(str)
-            dated["quarter"] = "Q" + dated["date"].dt.quarter.astype(str)
+            dated["quarter"] = dated["date"].dt.to_period("Q").astype(str)
             dated["weekday"] = dated["date"].dt.day_name()
             monthly = records(dated.groupby("month")["revenue"].sum().sort_index(), "period", limit=24)
-            quarterly = records(dated.groupby("quarter")["revenue"].sum().reindex(["Q1","Q2","Q3","Q4"]).dropna(), "quarter", limit=4)
+            quarterly = records(dated.groupby("quarter")["revenue"].sum().sort_index(), "quarter", limit=16)
             weekday_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
             weekdays = records(dated.groupby("weekday")["revenue"].sum().reindex(weekday_order).dropna().sort_values(ascending=False), "day", limit=7)
 
