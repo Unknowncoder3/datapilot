@@ -567,3 +567,23 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
             count = int(len(df))
         return {"question": question.strip(), "answer": f"The dataset contains {count:,} orders/transactions.", "metric": {"label": "Orders / transactions", "value": count, "format": "number"}, "source": "dataset", "rows_analyzed": int(len(df))}
     raise HTTPException(status_code=422, detail="I can answer questions about total revenue/sales, unique customers or orders, top countries/markets, and top products. Try one of the suggested questions.")
+
+
+from app.services.business_intelligence.ai_insights_feed_engine import build_ai_insights_feed
+
+
+@router.get("/{dataset_id}/bi/ai-insights")
+def unified_ai_insights(
+    dataset_id: int,
+    top_n: int = 10,
+    db: Session = Depends(get_db),
+):
+    """Return a unified feed of evidence-backed findings, anomalies, and actions."""
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {
+            "dataset_id": dataset_id,
+            **build_ai_insights_feed(df, top_n=top_n),
+        }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
