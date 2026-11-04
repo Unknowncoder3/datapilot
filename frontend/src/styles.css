@@ -498,3 +498,27 @@
 .adv-axis-label{fill:var(--adv-muted);font:600 8px "Space Grotesk",sans-serif;letter-spacing:-.1px}
 .adv-line-labels span{font-size:8px}
 @media(max-width:760px){.adv-axis-label{font-size:7px}.adv-line-labels span{font-size:7px}}
+
+
+/* Phase 5.9 — branded print/PDF export */
+@page{size:A4 landscape;margin:12mm}
+@media print{
+  html,body{background:#080d1b!important;color:#f3f5ff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  body *{visibility:hidden!important}
+  .executive-bi,.executive-bi *{visibility:visible!important}
+  .executive-bi{position:absolute!important;inset:0 auto auto 0!important;width:100%!important;max-width:none!important;margin:0!important;padding:12px!important;background:#080d1b!important;color:#f3f5ff!important;box-shadow:none!important}
+  .adv-header{display:flex!important;align-items:flex-start!important;gap:14px!important;border-bottom:2px solid #7889ff!important;padding:0 0 12px!important;margin-bottom:12px!important}
+  .adv-header h1{color:#f3f5ff!important;font-size:24px!important}
+  .adv-header p,.adv-dashboard-status,.adv-panel-head p,.adv-footer{color:#b5bfdc!important}
+  .adv-filter-panel,.adv-export-actions,.adv-ai-ask-form,.adv-ai-suggestions,.adv-layout-toolbar,.adv-panel-layout-controls,.adv-reset,.adv-layout-actions{display:none!important}
+  .adv-ai-ask{background:#111b35!important;border:1px solid #344777!important;box-shadow:none!important;break-inside:avoid}
+  .adv-kpi-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:8px!important}
+  .adv-kpi-card,.adv-panel{background:#111b35!important;border:1px solid #344777!important;box-shadow:none!important;break-inside:avoid!important;page-break-inside:avoid!important}
+  .adv-chart-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  .adv-panel-wide{grid-column:span 2!important}
+  .adv-panel-head h2,.adv-kpi-value,.adv-kpi-label,.adv-bar-label,.adv-quarter-column b,.adv-quarter-column span{color:#f3f5ff!important}
+  .adv-gridline{stroke:#344777!important}
+  .adv-axis-label,.adv-line-labels span,.adv-donut-legend button span,.adv-donut-legend button b{fill:#b5bfdc!important;color:#b5bfdc!important}
+  .adv-panel:hover,.adv-kpi-card:hover{transform:none!important}
+  .adv-footer{margin-top:10px!important;font-size:8px!important}
+}
