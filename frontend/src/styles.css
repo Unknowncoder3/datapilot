@@ -493,3 +493,8 @@
 .adv-selected .adv-bar-track,.adv-selected .adv-quarter-column i{outline:2px solid #aab4ff;outline-offset:2px}
 @media(max-width:760px){.adv-panel{border-radius:11px}.adv-panel-head{margin-bottom:15px}.adv-line-chart svg{height:190px}.adv-donut-layout{min-height:unset}.adv-quarter-chart{height:195px;gap:7px;padding-inline:4px}.adv-quarter-column span{font-size:8px}.adv-quarter-column b{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.adv-panel,.adv-bar-track i,.adv-line-point,.adv-donut-slice,.adv-donut-legend button,.adv-quarter-column,.adv-quarter-column i{transition:none}.adv-quarter-column:hover,.adv-panel:hover{transform:none}}
+
+/* Phase 5.8 · chart axis readability */
+.adv-axis-label{fill:var(--adv-muted);font:600 8px "Space Grotesk",sans-serif;letter-spacing:-.1px}
+.adv-line-labels span{font-size:8px}
+@media(max-width:760px){.adv-axis-label{font-size:7px}.adv-line-labels span{font-size:7px}}
