@@ -448,11 +448,11 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
     # Previously, short prompts such as "What is the total revenue?" were appended
     # to an earlier "top products" request, causing the product intent to win.
     explicit_intent_patterns = (
-        r"\\b(total|overall)\\s+(revenue|sales)\\b",
-        r"\\b(how many|number of|count|unique)\\s+(customers|clients|orders|invoices|transactions)\\b",
-        r"\\b(top|highest|most|best|leading)\\s+(products|items|sku|countries|markets|regions)\\b",
-        r"\\b(which|what)\\s+(country|market|product|item)\\b",
-        r"\\b(show|list|rank)\\s+(me\\s+)?(the\\s+)?(top|products|countries|markets)\\b",
+        r"\b(total|overall)\s+(revenue|sales)\b",
+        r"\b(how many|number of|count|unique)\s+(customers|clients|orders|invoices|transactions)\b",
+        r"\b(top|highest|most|best|leading)\s+(products|items|sku|countries|markets|regions)\b",
+        r"\b(which|what)\b.*\b(country|market|product|item)\b",
+        r"\b(show|list|rank)\s+(me\s+)?(the\s+)?(top|products|countries|markets)\b",
     )
     has_explicit_intent = any(re.search(pattern, follow_up) for pattern in explicit_intent_patterns)
     is_contextual_follow_up = (
@@ -463,7 +463,7 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
     if relevant_question and not has_explicit_intent and is_contextual_follow_up:
         intent_question = f"{relevant_question} {question}"
     q = re.sub(r"[^a-z0-9 ]", " ", intent_question.lower())
-    q = re.sub(r"\\s+", " ", q).strip()
+    q = re.sub(r"\s+", " ", q).strip()
 
     revenue_role = mapping.get("revenue")
     if isinstance(revenue_role, dict) and revenue_role.get("type") == "derived":
@@ -528,6 +528,23 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
         else:
             answer = f"Here are the top {len(rows)} {label} by {metric}."
         return {"question": question.strip(), "answer": answer, "chart": chart, "source": "dataset", "rows_analyzed": int(len(df))}
+
+    # "Best" is not a single metric. Avoid silently assuming revenue when
+    # the user has not specified how products should be evaluated.
+    asks_best_product = (
+        any(term in q for term in ("best product", "best item", "which product is best", "what is the best product"))
+        or ("which" in q and "product" in q and "best" in q)
+    )
+    product_metric_terms = ("revenue", "sales", "quantity", "units", "volume", "profit", "margin")
+    if asks_best_product and not any(term in q for term in product_metric_terms):
+        return {
+            "question": question.strip(),
+            "answer": "Which metric should I use to determine the best product: highest revenue, most units sold, or highest profit? I can rank it using the available dataset columns.",
+            "clarification_required": True,
+            "suggested_metrics": ["revenue", "quantity_sold", "profit"],
+            "source": "dataset",
+            "rows_analyzed": int(len(df)),
+        }
 
     if any(term in q for term in ["country", "market", "region"]) and any(term in q for term in ["top", "highest", "most", "best", "revenue", "sales", "rank", "which"]):
         return grouped_top(country_col or mapping.get("region"), "countries/markets")
