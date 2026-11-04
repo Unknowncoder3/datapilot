@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAdvancedDashboard, getApiErrorMessage } from "./api.js";
+import { getAdvancedDashboard, getApiErrorMessage, askBusinessQuestion } from "./api.js";
 
 const money = (value) => {
   if (value == null || !Number.isFinite(Number(value))) return "—";
@@ -74,6 +74,10 @@ export default function ExecutiveDashboard({ dataset, onDashboardData }) {
   const [weekday, setWeekday] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [askText, setAskText] = useState("");
+  const [askLoading, setAskLoading] = useState(false);
+  const [askError, setAskError] = useState("");
+  const [askResult, setAskResult] = useState(null);
   const [layoutEditing, setLayoutEditing] = useState(false);
   const [draggingPanel, setDraggingPanel] = useState("");
   const [layoutReady, setLayoutReady] = useState(false);
@@ -164,6 +168,16 @@ export default function ExecutiveDashboard({ dataset, onDashboardData }) {
       <div className="adv-export-actions"><button type="button" onClick={exportCsv} className="adv-export-button">↓ Export CSV</button></div>
     </header>
     <div className="adv-dashboard-status"><span className={loading ? "adv-status-loading" : "adv-status-dot"} />{loading ? "Updating visuals…" : `Dataset loaded · ${number(dashboard?.dataset_rows)} filtered rows`}<span className="adv-status-period">{periodLabel}</span></div>
+    <section className="adv-ai-ask" aria-label="Ask DataPilot">
+      <div className="adv-ai-ask-head"><div><span className="adv-ai-kicker">✦ AI DATA ASSISTANT</span><h2>Ask your data a question</h2><p>Get a dataset-grounded answer with a quick breakdown.</p></div><span className="adv-ai-chip">NATURAL LANGUAGE</span></div>
+      <form className="adv-ai-ask-form" onSubmit={async (event) => { event.preventDefault(); if (!askText.trim() || askLoading) return; setAskLoading(true); setAskError(""); setAskResult(null); try { const response = await askBusinessQuestion(dataset.id, askText.trim()); setAskResult(response.data); } catch (err) { setAskError(getApiErrorMessage(err)); } finally { setAskLoading(false); } }}>
+        <input value={askText} onChange={(event) => setAskText(event.target.value)} placeholder="e.g. Which country generated the highest revenue?" aria-label="Ask a question about the dataset" maxLength={500}/>
+        <button type="submit" disabled={askLoading || !askText.trim()}>{askLoading ? "Analyzing…" : "✦ Ask DataPilot"}</button>
+      </form>
+      <div className="adv-ai-suggestions">{["Which country generated the highest revenue?","Show the top products by sales","How many unique customers are there?","What is the total revenue?"].map((sample) => <button type="button" key={sample} onClick={() => setAskText(sample)}>{sample}</button>)}</div>
+      {askError && <div className="adv-ai-error" role="alert">{askError}</div>}
+      {askResult && <div className="adv-ai-answer"><div className="adv-ai-answer-label"><span>✦ ANSWER</span><small>{number(askResult.rows_analyzed)} rows analyzed · Dataset source</small></div><p>{askResult.answer}</p>{askResult.metric && <div className="adv-ai-metric"><span>{askResult.metric.label}</span><strong>{askResult.metric.format === "currency" ? money(askResult.metric.value) : number(askResult.metric.value)}</strong></div>}{askResult.chart?.data?.length > 0 && <div className="adv-ai-chart-list"><h3>{askResult.chart.title}</h3>{askResult.chart.data.map((item,index) => { const max=Math.max(1,...askResult.chart.data.map(row=>Math.abs(Number(row.value)||0))); return <div className="adv-ai-chart-row" key={item.label}><span title={item.label}>{item.label}</span><i><b style={{width:`${Math.max(2,Math.abs(Number(item.value)||0)/max*100)}%`}}/></i><strong>{askResult.chart.metric === "revenue" ? money(item.value) : number(item.value)}</strong></div>; })}</div>}</div>}
+    </section>
     {error && <div className="alert alert-warning">{error}<button className="text-button ms-2" onClick={() => { setCountry(country); }}>Retry by changing a filter</button></div>}
     <div className="adv-kpi-grid">{kpis.map((item, i) => <article className={`adv-kpi-card adv-kpi-${i}`} key={item.label}><div className="adv-kpi-label">{item.label}</div><div className="adv-kpi-value">{item.format === "currency" ? money(item.value) : number(item.value)}</div><div className="adv-kpi-bottom"><span />Dataset calculated metric</div></article>)}</div>
     <div className="adv-layout-toolbar">
