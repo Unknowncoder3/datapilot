@@ -473,7 +473,7 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
             raise HTTPException(status_code=422, detail=f"Could not identify a {label} column in this dataset.")
         # Respect explicit ranking sizes (e.g. "top 5") and conversational expansion.
         # Keep the limit bounded so a natural-language request cannot create huge responses.
-        explicit_limit = re.search(r"\\btop\\s+(\\d{1,2})\\b", follow_up)
+        explicit_limit = re.search(r"\btop\s+(\d{1,2})\b", follow_up)
         if explicit_limit:
             result_limit = max(1, min(50, int(explicit_limit.group(1))))
         else:
