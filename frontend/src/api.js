@@ -149,3 +149,7 @@ export const getAdvancedDashboard = (datasetId, params = {}) =>
 // Phase 5.6: natural-language analytics questions.
 export const askBusinessQuestion = (datasetId, question, conversation = []) =>
   api.post(`/analytics/${datasetId}/bi/ask`, { question, conversation });
+
+// Phase 6: unified evidence-backed AI insights feed.
+export const getUnifiedAIInsights = (datasetId, topN = 10) =>
+  api.get(`/analytics/${datasetId}/bi/ai-insights`, { params: { top_n: topN } });
