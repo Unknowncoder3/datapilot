@@ -471,9 +471,17 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
     def grouped_top(column, label):
         if not isinstance(column, str) or column not in df.columns:
             raise HTTPException(status_code=422, detail=f"Could not identify a {label} column in this dataset.")
-        # Expand rankings when the user asks for more in a follow-up.
-        asks_for_more = any(term in follow_up for term in ("show me more", "more results", "more products", "more countries", "show more", "expand", "top 20", "20 items"))
-        result_limit = 20 if asks_for_more else 10
+        # Respect explicit ranking sizes (e.g. "top 5") and conversational expansion.
+        # Keep the limit bounded so a natural-language request cannot create huge responses.
+        explicit_limit = re.search(r"\\btop\\s+(\\d{1,2})\\b", follow_up)
+        if explicit_limit:
+            result_limit = max(1, min(50, int(explicit_limit.group(1))))
+        else:
+            asks_for_more = any(
+                term in follow_up
+                for term in ("show me more", "more results", "more products", "more countries", "show more", "expand", "top 20", "20 items")
+            )
+            result_limit = 20 if asks_for_more else 10
         if revenue is None:
             grouped = df[column].dropna().astype(str).value_counts().head(result_limit)
             rows = [{"label": str(k), "value": int(v)} for k, v in grouped.items()]
