@@ -27,10 +27,11 @@ function TrendChart({ items = [] }) {
   if (!items.length) return <div className="adv-empty">No date field was detected for this dataset.</div>;
   const values = items.map((item) => Number(item.revenue || 0));
   const max = Math.max(1, ...values), min = Math.min(0, ...values), range = Math.max(1, max - min);
-  const points = values.map((v, i) => `${22 + i * (656 / Math.max(1, values.length - 1))},${210 - ((v - min) / range) * 175}`);
+  const points = values.map((v, i) => `${52 + i * (626 / Math.max(1, values.length - 1))},${210 - ((v - min) / range) * 175}`);
+  const tickValues = [0, 0.25, 0.5, 0.75, 1].map((ratio) => min + range * ratio);
   return <div className="adv-line-chart">
-    <svg viewBox="0 0 700 245" role="img" aria-label="Monthly revenue line chart" preserveAspectRatio="none">
-      {[35, 78, 122, 166, 210].map((y) => <line key={y} x1="20" x2="680" y1={y} y2={y} className="adv-gridline" />)}
+    <svg viewBox="0 0 700 245" role="img" aria-label="Monthly revenue line chart with currency axis" preserveAspectRatio="none">
+      {[35, 78, 122, 166, 210].map((y, index) => <g key={y}><line x1="50" x2="680" y1={y} y2={y} className="adv-gridline" /><text x="43" y={y + 3} textAnchor="end" className="adv-axis-label">{money(tickValues[4 - index])}</text></g>)}
       <polyline points={points.join(" ")} className="adv-line-area" />
       <polyline points={points.join(" ")} className="adv-line-path" />
       {points.map((p, i) => { const [x,y] = p.split(","); return <circle key={i} cx={x} cy={y} r="3.2" className="adv-line-point"><title>{items[i].period}: {money(values[i])}</title></circle>; })}
