@@ -463,14 +463,36 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
         if not isinstance(column, str) or column not in df.columns:
             raise HTTPException(status_code=422, detail=f"Could not identify a {label} column in this dataset.")
         if revenue is None:
-            counts = df[column].dropna().astype(str).value_counts().head(10)
-            rows = [{"label": str(k), "value": int(v)} for k, v in counts.items()]
+            grouped = df[column].dropna().astype(str).value_counts().head(10)
+            rows = [{"label": str(k), "value": int(v)} for k, v in grouped.items()]
             metric = "row count"
         else:
             grouped = pd.DataFrame({"group": df[column].astype("string"), "value": revenue}).dropna(subset=["group"]).groupby("group", dropna=False)["value"].sum().sort_values(ascending=False).head(10)
             rows = [{"label": str(k), "value": float(v)} for k, v in grouped.items()]
             metric = "revenue"
-        return {"question": question.strip(), "answer": f"Here are the top {len(rows)} {label} by {metric}.", "chart": {"type": "bar", "title": f"Top {label.title()} by {metric.title()}", "metric": metric, "data": rows}, "source": "dataset", "rows_analyzed": int(len(df))}
+
+        chart = {"type": "bar", "title": f"Top {label.title()} by {metric.title()}", "metric": metric, "data": rows}
+        is_followup_why = bool(previous_question) and any(term in follow_up for term in ("why", "explain"))
+        asks_for_single_leader = any(term in follow_up for term in ("highest", "most", "which", "who generated", "leading", "number one", "no 1", "top country", "top product"))
+        if not rows:
+            answer = f"No {label} values were available to rank in this dataset."
+        elif is_followup_why:
+            leader = rows[0]
+            if len(rows) > 1:
+                runner_up = rows[1]
+                difference = leader["value"] - runner_up["value"]
+                answer = (
+                    f"{leader['label']} ranks first by {metric} at {leader['value']:,.2f}, "
+                    f"which is {difference:,.2f} higher than {runner_up['label']} ({runner_up['value']:,.2f}). "
+                    f"This explains its top ranking in the measured {metric}; the dataset alone does not establish the underlying cause."
+                )
+            else:
+                answer = f"{leader['label']} ranks first by {metric} at {leader['value']:,.2f}. The dataset shows the ranking, but not the underlying cause."
+        elif asks_for_single_leader:
+            answer = f"{rows[0]['label']} generated the highest {metric} among the {label}, at {rows[0]['value']:,.2f}."
+        else:
+            answer = f"Here are the top {len(rows)} {label} by {metric}."
+        return {"question": question.strip(), "answer": answer, "chart": chart, "source": "dataset", "rows_analyzed": int(len(df))}
 
     if any(term in q for term in ["country", "market", "region"]) and any(term in q for term in ["top", "highest", "most", "best", "revenue", "sales", "rank", "which"]):
         return grouped_top(country_col or mapping.get("region"), "countries/markets")
