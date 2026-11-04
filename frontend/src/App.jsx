@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { deleteDataset, getDatasets, getHealth, getPreview, getProfile, uploadDataset } from "./api.js";
 import ExecutiveDashboard, { AIInsightsPage } from "./ExecutiveDashboard.jsx";
+import AskDataPilot from "./AskDataPilot.jsx";
 
 const number = (value) => Number(value || 0).toLocaleString("en-IN");
 const prettyDate = (value) => value ? new Date(value).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"numeric" }) : "—";
@@ -223,7 +224,7 @@ function App() {
         <a className="brand" href="#" onClick={() => setSection("Overview")}><span className="brand-mark">D</span><span>DataPilot<span className="brand-ai"> AI</span><small>INTELLIGENCE WORKSPACE</small></span></a>
         <div className="workspace-label">WORKSPACE</div>
         <nav className="nav flex-column">
-          {[["Overview","◫"],["Datasets","▤"],["Analytics","▥"],["Executive BI","✦"],["AI Insights","✧"],["Download & Export","⇩"]].map(([label, icon]) =>
+          {[["Overview","◫"],["Datasets","▤"],["Analytics","▥"],["Executive BI","✦"],["AI Insights","✧"],["Ask DataPilot","✦"],["Download & Export","⇩"]].map(([label, icon]) =>
             <button key={label} className={`nav-link ${section === label ? "active" : ""}`} onClick={() => setSection(label)}><span>{icon}</span>{label}</button>
           )}
         </nav>
@@ -264,6 +265,8 @@ function App() {
           {section === "Executive BI" && <ExecutiveDashboard dataset={selected} onDashboardData={setDashboardExportData} />}
 
           {section === "AI Insights" && <AIInsightsPage dataset={selected} />}
+
+          {section === "Ask DataPilot" && <AskDataPilot dataset={selected} />}
 
           {section === "Download & Export" && <DownloadExport dataset={selected} profile={profile} preview={preview} dashboardExportData={dashboardExportData} />}
           {section === "Download & Export" && !dashboardExportData && selected && <div style={{display:"none"}}><ExecutiveDashboard dataset={selected} onDashboardData={setDashboardExportData}/></div>}
