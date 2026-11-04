@@ -462,16 +462,19 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
     def grouped_top(column, label):
         if not isinstance(column, str) or column not in df.columns:
             raise HTTPException(status_code=422, detail=f"Could not identify a {label} column in this dataset.")
+        # Expand rankings when the user asks for more in a follow-up.
+        asks_for_more = any(term in follow_up for term in ("show me more", "more results", "more products", "more countries", "show more", "expand", "top 20", "20 items"))
+        result_limit = 20 if asks_for_more else 10
         if revenue is None:
-            grouped = df[column].dropna().astype(str).value_counts().head(10)
+            grouped = df[column].dropna().astype(str).value_counts().head(result_limit)
             rows = [{"label": str(k), "value": int(v)} for k, v in grouped.items()]
             metric = "row count"
         else:
-            grouped = pd.DataFrame({"group": df[column].astype("string"), "value": revenue}).dropna(subset=["group"]).groupby("group", dropna=False)["value"].sum().sort_values(ascending=False).head(10)
+            grouped = pd.DataFrame({"group": df[column].astype("string"), "value": revenue}).dropna(subset=["group"]).groupby("group", dropna=False)["value"].sum().sort_values(ascending=False).head(result_limit)
             rows = [{"label": str(k), "value": float(v)} for k, v in grouped.items()]
             metric = "revenue"
 
-        chart = {"type": "bar", "title": f"Top {label.title()} by {metric.title()}", "metric": metric, "data": rows}
+        chart = {"type": "bar", "title": f"Top {len(rows)} {label.title()} by {metric.title()}", "metric": metric, "data": rows}
         is_followup_why = bool(previous_question) and any(term in follow_up for term in ("why", "explain"))
         asks_for_single_leader = any(term in follow_up for term in ("highest", "most", "which", "who generated", "leading", "number one", "no 1", "top country", "top product"))
         if not rows:
