@@ -76,6 +76,111 @@ def _load_dataset(dataset_id: int, db: Session):
         raise HTTPException(status_code=422, detail="Could not read dataset.") from exc
 
 
+@router.get("/{dataset_id}/insights")
+def dataset_insights(
+    dataset_id: int,
+    limit: int = Query(20, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    """Generate explainable, dataset-grounded insights without an external AI call."""
+    import math
+    import pandas as pd
+
+    df = _load_dataset(dataset_id, db)
+    row_count = int(len(df))
+    insights = []
+
+    if row_count == 0 or len(df.columns) == 0:
+        return {
+            "dataset_id": dataset_id,
+            "rows_analyzed": row_count,
+            "insight_count": 0,
+            "insights": [],
+        }
+
+    # Missingness: surface columns with a meaningful amount of absent data.
+    for column in df.columns:
+        missing_count = int(df[column].isna().sum())
+        missing_pct = (missing_count / row_count) * 100
+        if missing_pct >= 10:
+            severity = "high" if missing_pct >= 40 else "medium"
+            insights.append({
+                "type": "data_quality",
+                "severity": severity,
+                "title": f"{str(column)} has missing values",
+                "description": f"{missing_count:,} of {row_count:,} rows ({missing_pct:.1f}%) are missing in this column.",
+                "metric": {"label": "Missing", "value": round(missing_pct, 2), "format": "percent"},
+                "columns": [str(column)],
+            })
+
+    duplicate_count = int(df.duplicated().sum())
+    duplicate_pct = (duplicate_count / row_count) * 100
+    if duplicate_count and duplicate_pct >= 1:
+        insights.append({
+            "type": "data_quality",
+            "severity": "medium" if duplicate_pct < 10 else "high",
+            "title": "Duplicate rows detected",
+            "description": f"{duplicate_count:,} rows ({duplicate_pct:.1f}%) are exact duplicates across all columns.",
+            "metric": {"label": "Duplicate rows", "value": duplicate_count, "format": "number"},
+            "columns": [str(column) for column in df.columns],
+        })
+
+    # Numeric columns: IQR-based outliers and broad distribution highlights.
+    numeric_columns = list(df.select_dtypes(include="number").columns)[:30]
+    for column in numeric_columns:
+        values = pd.to_numeric(df[column], errors="coerce").dropna()
+        if len(values) < 8 or values.nunique() < 4:
+            continue
+        q1 = float(values.quantile(0.25))
+        q3 = float(values.quantile(0.75))
+        iqr = q3 - q1
+        if not math.isfinite(iqr) or iqr <= 0:
+            continue
+        lower = q1 - 1.5 * iqr
+        upper = q3 + 1.5 * iqr
+        outlier_count = int(((values < lower) | (values > upper)).sum())
+        outlier_pct = (outlier_count / len(values)) * 100
+        if outlier_count and outlier_pct >= 1:
+            insights.append({
+                "type": "distribution",
+                "severity": "medium" if outlier_pct < 5 else "high",
+                "title": f"Potential outliers in {str(column)}",
+                "description": f"{outlier_count:,} values ({outlier_pct:.1f}% of non-missing values) fall outside the 1.5×IQR range ({lower:,.3g} to {upper:,.3g}). Review these values; they may be valid extremes.",
+                "metric": {"label": "Potential outliers", "value": outlier_count, "format": "number"},
+                "columns": [str(column)],
+            })
+
+    # Low-cardinality categorical columns: reveal dominant category concentration.
+    for column in list(df.select_dtypes(include=["object", "category", "string"]).columns)[:30]:
+        values = df[column].dropna()
+        unique_count = int(values.nunique())
+        if len(values) < 10 or unique_count < 2 or unique_count > 50:
+            continue
+        counts = values.astype(str).value_counts()
+        leader = str(counts.index[0])
+        share = (int(counts.iloc[0]) / len(values)) * 100
+        if share >= 80:
+            insights.append({
+                "type": "concentration",
+                "severity": "low",
+                "title": f"{str(column)} is highly concentrated",
+                "description": f"{leader} represents {share:.1f}% of non-missing values in this column.",
+                "metric": {"label": "Leading category share", "value": round(share, 2), "format": "percent"},
+                "columns": [str(column)],
+                "category": leader,
+            })
+
+    severity_rank = {"high": 0, "medium": 1, "low": 2}
+    insights.sort(key=lambda item: (severity_rank.get(item["severity"], 3), item["type"], item["title"]))
+    selected = insights[:limit]
+    return {
+        "dataset_id": dataset_id,
+        "rows_analyzed": row_count,
+        "insight_count": len(insights),
+        "insights": selected,
+    }
+
+
 @router.get("/{dataset_id}/charts/recommendations")
 def chart_recommendations(
     dataset_id: int,
