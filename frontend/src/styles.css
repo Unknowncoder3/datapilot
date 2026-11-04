@@ -282,3 +282,35 @@
 .gallery-downloads button:hover{filter:brightness(1.2);background:#ffffff12}
 @media(max-width:900px){.gallery-grid{grid-template-columns:1fr}}
 @media(max-width:700px){.gallery-heading{flex-direction:column}.gallery-card-foot{align-items:flex-start;flex-direction:column}.gallery-card-foot button{width:100%}}
+
+
+/* Phase 5.4 — premium dashboard gallery visual polish */
+.gallery-grid{gap:22px;align-items:stretch}
+.gallery-card{position:relative;isolation:isolate;padding:18px;border-radius:18px;box-shadow:0 14px 34px #00000022;transform:translateZ(0)}
+.gallery-card:before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 0% 0%,color-mix(in srgb,currentColor 10%,transparent),transparent 48%),linear-gradient(145deg,#ffffff08,transparent 48%)}
+.gallery-card:after{content:"";position:absolute;top:-70px;right:-65px;width:190px;height:190px;border-radius:50%;z-index:-1;pointer-events:none;background:radial-gradient(circle,currentColor 0%,transparent 68%);opacity:.055}
+.gallery-card.selected{box-shadow:0 0 0 2px currentColor,0 22px 50px #00000038;transform:translateY(-2px)}
+.gallery-card:hover:not(.selected){transform:translateY(-4px);box-shadow:0 22px 45px #00000032}
+.gallery-preview-head{padding:7px 2px 12px;font-size:11px}
+.gallery-preview-head strong{font-size:11px;letter-spacing:.4px}
+.gallery-preview-head span{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.gallery-preview-kpis{gap:9px;margin:13px 0}
+.gallery-preview-kpis>div{position:relative;padding:10px 10px 11px;border-radius:9px;box-shadow:inset 0 1px #ffffff0b,0 4px 10px #00000010}
+.gallery-preview-kpis small{font-size:7px;letter-spacing:.55px;opacity:.9}
+.gallery-preview-kpis b{font:700 14px "Space Grotesk",sans-serif;letter-spacing:-.3px;margin-top:7px}
+.gallery-preview-charts{gap:9px}
+.gallery-preview-line,.gallery-preview-breakdown{padding:11px;border-radius:10px;box-shadow:inset 0 1px #ffffff0a}
+.gallery-preview-line>span,.gallery-preview-breakdown>span{font-size:8px;letter-spacing:.85px}
+.gallery-preview-line svg{height:86px;margin-top:9px;overflow:visible}
+.gallery-preview-breakdown svg{filter:drop-shadow(0 5px 8px #00000025)}
+.gallery-preview-breakdown .gallery-bar{font-size:8px;margin-top:9px}
+.gallery-preview-breakdown .gallery-bar i{height:5px}
+.gallery-card-foot{margin-top:17px;padding-top:3px}
+.gallery-card-foot h3{font-size:16px;letter-spacing:-.35px}
+.gallery-card-foot p{font-size:10px;max-width:340px;line-height:1.65}
+.gallery-card-foot button{padding:10px 13px;border-radius:9px;font-size:10px;transition:transform .18s,filter .18s}
+.gallery-card-foot button:hover{transform:translateY(-1px);filter:brightness(1.12)}
+.gallery-downloads{gap:10px;margin-top:14px}
+.gallery-downloads button{padding:11px 12px;border-radius:9px;font-size:10px;letter-spacing:.1px;transition:transform .18s,background .18s,border-color .18s}
+.gallery-downloads button:hover{transform:translateY(-1px);background:#ffffff14;border-color:currentColor}
+@media(max-width:700px){.gallery-card{padding:13px}.gallery-preview-line svg{height:72px}}
