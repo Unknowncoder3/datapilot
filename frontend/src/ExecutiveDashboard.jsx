@@ -232,6 +232,26 @@ export function AIInsightsPage({ dataset }) {
   const [aiInsights, setAiInsights] = useState(null);
   const [aiInsightsLoading, setAiInsightsLoading] = useState(false);
   const [aiInsightsError, setAiInsightsError] = useState("");
+  const [recommendationStatuses, setRecommendationStatuses] = useState({});
+  const [insightFilter, setInsightFilter] = useState("all");
+  const statusStorageKey = `datapilot-ai-insight-status-${dataset?.id}`;
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(statusStorageKey);
+      setRecommendationStatuses(saved ? JSON.parse(saved) : {});
+    } catch {
+      setRecommendationStatuses({});
+    }
+  }, [statusStorageKey]);
+
+  const setRecommendationStatus = (insightId, status) => {
+    setRecommendationStatuses((current) => {
+      const next = { ...current, [insightId]: status };
+      try { window.localStorage.setItem(statusStorageKey, JSON.stringify(next)); } catch { /* storage may be unavailable */ }
+      return next;
+    });
+  };
 
   const loadInsights = () => {
     if (!dataset?.id) return;
@@ -259,12 +279,17 @@ export function AIInsightsPage({ dataset }) {
     {aiInsightsError && <div className="adv-insights-error" role="alert">{aiInsightsError}<button type="button" onClick={loadInsights}>Try again</button></div>}
     {!aiInsightsLoading && !aiInsightsError && aiInsights && <>
       <div className="adv-insights-summary"><div><strong>{number(aiInsights.insight_count)}</strong><span>Total signals</span></div><div><strong>{number(aiInsights.counts_by_kind?.finding)}</strong><span>Findings</span></div><div><strong>{number(aiInsights.counts_by_kind?.anomaly)}</strong><span>Anomalies</span></div><div><strong>{number(aiInsights.counts_by_kind?.recommendation)}</strong><span>Recommendations</span></div><div><strong>{number(aiInsights.counts_by_severity?.high + aiInsights.counts_by_severity?.critical + aiInsights.counts_by_severity?.warning)}</strong><span>Priority signals</span></div></div>
-      <div className="adv-insights-cards">{(aiInsights.insights || []).map((item) => <article className={`adv-insight-card adv-severity-${String(item.severity || "neutral").toLowerCase()}`} key={item.id}>
+      <div className="adv-recommendation-toolbar">
+        <div className="adv-status-counts"><span><b>{(aiInsights.insights || []).filter(item => item.kind === "recommendation" && (!recommendationStatuses[item.id] || recommendationStatuses[item.id] === "open")).length}</b> Open</span><span><b>{(aiInsights.insights || []).filter(item => item.kind === "recommendation" && recommendationStatuses[item.id] === "in_progress").length}</b> In progress</span><span><b>{(aiInsights.insights || []).filter(item => item.kind === "recommendation" && recommendationStatuses[item.id] === "resolved").length}</b> Resolved</span><span><b>{(aiInsights.insights || []).filter(item => item.kind === "recommendation" && recommendationStatuses[item.id] === "dismissed").length}</b> Dismissed</span></div>
+        <div className="adv-insight-filter" role="group" aria-label="Filter insight recommendations">{[{id:"all",label:"All signals"},{id:"open",label:"Open"},{id:"in_progress",label:"In progress"},{id:"resolved",label:"Resolved"},{id:"dismissed",label:"Dismissed"}].map(option=><button type="button" key={option.id} className={insightFilter===option.id?"active":""} onClick={()=>setInsightFilter(option.id)}>{option.label}</button>)}</div>
+      </div>
+      <div className="adv-insights-cards">{(aiInsights.insights || []).filter(item => insightFilter === "all" || (item.kind === "recommendation" && (recommendationStatuses[item.id] || "open") === insightFilter)).map((item) => <article className={`adv-insight-card adv-severity-${String(item.severity || "neutral").toLowerCase()} ${item.kind === "recommendation" ? "adv-actionable-card" : ""} ${recommendationStatuses[item.id] ? "adv-status-" + recommendationStatuses[item.id] : ""}`} key={item.id}>
         <div className="adv-insight-card-top"><span className={`adv-insight-kind adv-kind-${item.kind}`}>{String(item.kind || "signal").replaceAll("_", " ")}</span><span className="adv-insight-severity">{String(item.severity || "neutral").toUpperCase()}</span></div>
         <h3>{item.title}</h3><p>{item.summary}</p>
         {item.metric != null && item.value != null && <div className="adv-insight-metric"><span>{titleCase(item.metric.replaceAll("_", " "))}</span><strong>{typeof item.value === "number" ? Number(item.value).toLocaleString("en-IN", {maximumFractionDigits:2}) : String(item.value)}</strong></div>}
         {item.suggested_action && <div className="adv-insight-action"><strong>Suggested action</strong><span>{item.suggested_action}</span></div>}
         {item.evidence && Object.keys(item.evidence).length > 0 && <details className="adv-insight-evidence"><summary>Evidence & explanation</summary><dl>{Object.entries(item.evidence).slice(0,6).map(([key,value]) => <div key={key}><dt>{titleCase(key.replaceAll("_"," "))}</dt><dd>{typeof value === "object" && value !== null ? JSON.stringify(value) : String(value)}</dd></div>)}</dl></details>}
+        {item.kind === "recommendation" && <div className="adv-recommendation-actions"><span className={`adv-recommendation-status adv-status-label-${recommendationStatuses[item.id] || "open"}`}>Status: {String(recommendationStatuses[item.id] || "open").replaceAll("_"," ")}</span><div><button type="button" onClick={() => setRecommendationStatus(item.id, "in_progress")} disabled={recommendationStatuses[item.id] === "in_progress"}>↗ Start</button><button type="button" onClick={() => setRecommendationStatus(item.id, "resolved")} disabled={recommendationStatuses[item.id] === "resolved"}>✓ Resolve</button><button type="button" onClick={() => setRecommendationStatus(item.id, "dismissed")} disabled={recommendationStatuses[item.id] === "dismissed"}>× Dismiss</button>{recommendationStatuses[item.id] && <button type="button" onClick={() => setRecommendationStatus(item.id, "open")}>↺ Reopen</button>}</div></div>}
         <div className="adv-insight-card-foot"><span>Confidence: {String(item.confidence || "unspecified")}</span>{item.category && <span>{titleCase(item.category)}</span>}</div>
         {item.limitations?.length > 0 && <small className="adv-insight-limitations">Limitations: {item.limitations.join(" · ")}</small>}
       </article>)}</div>
