@@ -444,8 +444,23 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
          if any(term in prior.lower() for term in ("product", "item", "sku", "country", "market", "region"))),
         previous_question,
     )
+    # A clearly stated new business question must take precedence over chat history.
+    # Previously, short prompts such as "What is the total revenue?" were appended
+    # to an earlier "top products" request, causing the product intent to win.
+    explicit_intent_patterns = (
+        r"\\b(total|overall)\\s+(revenue|sales)\\b",
+        r"\\b(how many|number of|count|unique)\\s+(customers|clients|orders|invoices|transactions)\\b",
+        r"\\b(top|highest|most|best|leading)\\s+(products|items|sku|countries|markets|regions)\\b",
+        r"\\b(which|what)\\s+(country|market|product|item)\\b",
+        r"\\b(show|list|rank)\\s+(me\\s+)?(the\\s+)?(top|products|countries|markets)\\b",
+    )
+    has_explicit_intent = any(re.search(pattern, follow_up) for pattern in explicit_intent_patterns)
+    is_contextual_follow_up = (
+        any(marker in follow_up for marker in ("why", "explain", "what about", "and ", "compare", "more", "chart", "graph", "show it", "that"))
+        or len(follow_up.split()) <= 3
+    )
     intent_question = question
-    if relevant_question and (len(follow_up.split()) <= 5 or any(marker in follow_up for marker in follow_up_markers)):
+    if relevant_question and not has_explicit_intent and is_contextual_follow_up:
         intent_question = f"{relevant_question} {question}"
     q = re.sub(r"[^a-z0-9 ]", " ", intent_question.lower())
     q = re.sub(r"\\s+", " ", q).strip()
