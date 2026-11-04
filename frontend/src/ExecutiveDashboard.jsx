@@ -134,11 +134,7 @@ export default function ExecutiveDashboard({ dataset, onDashboardData }) {
     return () => { active = false; };
   }, [dataset?.id, country, startDate, endDate, product, quarter, weekday]);
 
-  useEffect(() => {
-    if (!dataset?.id) { setAiInsights(null); return; }
-    let active = true;
-    setAiInsightsLoading(true); setAiInsightsError("");
-    getUnifiedAIInsights(dataset a dataset first</h3><p>Choose a dataset to build an advanced BI dashboard.</p></div>;
+  if (!dataset?.id) return <div className="empty-state"><div className="empty-icon">✦</div><h3>Select a dataset first</h3><p>Choose a dataset to build an advanced BI dashboard.</p></div>;
 
   const kpis = dashboard?.kpis || [];
   const periodLabel = startDate || endDate ? `${startDate || "Dataset start"} — ${endDate || "Dataset end"}` : "All available dates";
