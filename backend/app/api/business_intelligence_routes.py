@@ -427,7 +427,18 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
     # Column mapper exposes the role mapping directly in its result; tolerate both shapes.
     if not mapping:
         mapping = map_business_columns(df)
-    q = re.sub(r"[^a-z0-9 ]", " ", question.lower())
+    # Resolve short follow-ups against the most recent user question in this session.
+    # This keeps the existing deterministic dataset analytics intent parser grounded.
+    conversation = payload.get("conversation", []) if isinstance(payload, dict) else []
+    previous_question = next((item.get("content", "") for item in reversed(conversation)
+                              if isinstance(item, dict) and item.get("role") == "user"
+                              and isinstance(item.get("content"), str)), "")
+    follow_up = question.strip().lower()
+    follow_up_markers = ("why", "explain", "what about", "and ", "compare", "more", "chart", "graph", "show it", "that")
+    intent_question = question
+    if previous_question and (len(follow_up.split()) <= 5 or any(marker in follow_up for marker in follow_up_markers)):
+        intent_question = f"{previous_question} {question}"
+    q = re.sub(r"[^a-z0-9 ]", " ", intent_question.lower())
     q = re.sub(r"\\s+", " ", q).strip()
 
     revenue_role = mapping.get("revenue")
