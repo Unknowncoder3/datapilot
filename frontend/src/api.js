@@ -144,3 +144,8 @@ export default api;
 // Advanced BI dashboard: aggregated dataset visuals and dashboard filters.
 export const getAdvancedDashboard = (datasetId, params = {}) =>
   api.get(`/analytics/${datasetId}/bi/advanced-dashboard`, { params });
+
+
+// Phase 5.6: natural-language analytics questions.
+export const askBusinessQuestion = (datasetId, question) =>
+  api.post(`/analytics/${datasetId}/bi/ask`, { question });
