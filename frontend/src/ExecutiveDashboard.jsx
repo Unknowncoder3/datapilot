@@ -80,9 +80,6 @@ export default function ExecutiveDashboard({ dataset, onDashboardData }) {
   const [askError, setAskError] = useState("");
   const [askResult, setAskResult] = useState(null);
   const [askConversation, setAskConversation] = useState([]);
-  const [aiInsights, setAiInsights] = useState(null);
-  const [aiInsightsLoading, setAiInsightsLoading] = useState(false);
-  const [aiInsightsError, setAiInsightsError] = useState("");
   const [layoutEditing, setLayoutEditing] = useState(false);
   const [draggingPanel, setDraggingPanel] = useState("");
   const [layoutReady, setLayoutReady] = useState(false);
@@ -141,16 +138,7 @@ export default function ExecutiveDashboard({ dataset, onDashboardData }) {
     if (!dataset?.id) { setAiInsights(null); return; }
     let active = true;
     setAiInsightsLoading(true); setAiInsightsError("");
-    getUnifiedAIInsights(dataset.id, 10)
-      .then((response) => { if (active) setAiInsights(response?.data?.data ?? response?.data ?? null); })
-      .catch((err) => { if (active) setAiInsightsError(getApiErrorMessage(err, "Unable to load AI insights.")); })
-      .finally(() => { if (active) setAiInsightsLoading(false); });
-    return () => { active = false; };
-  }, [dataset?.id]);
-
-  useEffect(() => { onDashboardData?.(dashboard); }, [dashboard, onDashboardData]);
-
-  if (!dataset?.id) return <div className="empty-state"><div className="empty-icon">✦</div><h3>Select a dataset first</h3><p>Choose a dataset to build an advanced BI dashboard.</p></div>;
+    getUnifiedAIInsights(dataset a dataset first</h3><p>Choose a dataset to build an advanced BI dashboard.</p></div>;
 
   const kpis = dashboard?.kpis || [];
   const periodLabel = startDate || endDate ? `${startDate || "Dataset start"} — ${endDate || "Dataset end"}` : "All available dates";
@@ -194,28 +182,6 @@ export default function ExecutiveDashboard({ dataset, onDashboardData }) {
       {askConversation.length > 0 && <div className="adv-ai-conversation"><div className="adv-ai-conversation-head"><strong>Conversation</strong><span>{Math.floor(askConversation.length / 2)} questions in this session</span><button type="button" onClick={() => { setAskConversation([]); setAskResult(null); setAskError(""); }}>Clear chat</button></div>{askConversation.filter((message) => message.role === "user").map((message, index) => { const answer = askConversation[askConversation.indexOf(message) + 1]; return <div className="adv-ai-turn" key={`${index}-${message.content}`}><div className="adv-ai-user-message"><span>You</span><p>{message.content}</p></div>{answer && <div className="adv-ai-assistant-message"><span>✦ DataPilot</span><p>{answer.content}</p></div>}</div>; })}</div>}
       {askError && <div className="adv-ai-error" role="alert">{askError}</div>}
       {askResult && <div className="adv-ai-answer"><div className="adv-ai-answer-label"><span>✦ ANSWER</span><small>{number(askResult.rows_analyzed)} rows analyzed · Dataset source</small></div><p>{askResult.answer}</p>{askResult.metric && <div className="adv-ai-metric"><span>{askResult.metric.label}</span><strong>{askResult.metric.format === "currency" ? money(askResult.metric.value) : number(askResult.metric.value)}</strong></div>}{askResult.chart?.data?.length > 0 && <div className="adv-ai-chart-list"><h3>{askResult.chart.title}</h3>{askResult.chart.data.map((item,index) => { const max=Math.max(1,...askResult.chart.data.map(row=>Math.abs(Number(row.value)||0))); return <div className="adv-ai-chart-row" key={item.label}><span title={item.label}>{item.label}</span><i><b style={{width:`${Math.max(2,Math.abs(Number(item.value)||0)/max*100)}%`}}/></i><strong>{askResult.chart.metric === "revenue" ? money(item.value) : number(item.value)}</strong></div>; })}</div>}</div>}
-    </section>
-    <section className="adv-insights-feed" aria-label="AI insights feed">
-      <div className="adv-insights-header">
-        <div><span className="adv-insights-kicker">✦ PHASE 6 · AI INSIGHTS ENGINE</span><h2>Insights & recommended actions</h2><p>Evidence-backed findings, unusual patterns, and prioritized actions from this dataset.</p></div>
-        <button type="button" onClick={() => { setAiInsightsError(""); setAiInsightsLoading(true); getUnifiedAIInsights(dataset.id, 10).then((response) => setAiInsights(response?.data?.data ?? response?.data ?? null)).catch((err) => setAiInsightsError(getApiErrorMessage(err, "Unable to load AI insights."))).finally(() => setAiInsightsLoading(false)); }} disabled={aiInsightsLoading}>↻ Refresh insights</button>
-      </div>
-      {aiInsightsLoading && <div className="adv-insights-state"><span className="adv-insights-spinner"/>Analyzing dataset for actionable signals…</div>}
-      {aiInsightsError && <div className="adv-insights-error" role="alert">{aiInsightsError}<button type="button" onClick={() => { setAiInsightsLoading(true); getUnifiedAIInsights(dataset.id, 10).then((response) => setAiInsights(response?.data?.data ?? response?.data ?? null)).catch((err) => setAiInsightsError(getApiErrorMessage(err, "Unable to load AI insights."))).finally(() => setAiInsightsLoading(false)); }}>Try again</button></div>}
-      {!aiInsightsLoading && !aiInsightsError && aiInsights && <>
-        <div className="adv-insights-summary"><div><strong>{number(aiInsights.insight_count)}</strong><span>Total signals</span></div><div><strong>{number(aiInsights.counts_by_kind?.finding)}</strong><span>Findings</span></div><div><strong>{number(aiInsights.counts_by_kind?.anomaly)}</strong><span>Anomalies</span></div><div><strong>{number(aiInsights.counts_by_kind?.recommendation)}</strong><span>Recommendations</span></div><div><strong>{number(aiInsights.counts_by_severity?.high + aiInsights.counts_by_severity?.critical + aiInsights.counts_by_severity?.warning)}</strong><span>Priority signals</span></div></div>
-        <div className="adv-insights-cards">{(aiInsights.insights || []).map((item) => <article className={`adv-insight-card adv-severity-${String(item.severity || "neutral").toLowerCase()}`} key={item.id}>
-          <div className="adv-insight-card-top"><span className={`adv-insight-kind adv-kind-${item.kind}`}>{String(item.kind || "signal").replaceAll("_", " ")}</span><span className="adv-insight-severity">{String(item.severity || "neutral").toUpperCase()}</span></div>
-          <h3>{item.title}</h3><p>{item.summary}</p>
-          {item.metric != null && item.value != null && <div className="adv-insight-metric"><span>{titleCase(item.metric.replaceAll("_", " "))}</span><strong>{typeof item.value === "number" ? Number(item.value).toLocaleString("en-IN", {maximumFractionDigits:2}) : String(item.value)}</strong></div>}
-          {item.suggested_action && <div className="adv-insight-action"><strong>Suggested action</strong><span>{item.suggested_action}</span></div>}
-          {item.evidence && Object.keys(item.evidence).length > 0 && <details className="adv-insight-evidence"><summary>Evidence & explanation</summary><dl>{Object.entries(item.evidence).slice(0,6).map(([key,value]) => <div key={key}><dt>{titleCase(key.replaceAll("_"," "))}</dt><dd>{typeof value === "object" && value !== null ? JSON.stringify(value) : String(value)}</dd></div>)}</dl></details>}
-          <div className="adv-insight-card-foot"><span>Confidence: {String(item.confidence || "unspecified")}</span>{item.category && <span>{titleCase(item.category)}</span>}</div>
-          {item.limitations?.length > 0 && <small className="adv-insight-limitations">Limitations: {item.limitations.join(" · ")}</small>}
-        </article>)}</div>
-        {aiInsights.notes?.length > 0 && <details className="adv-insights-methodology"><summary>How these insights are generated</summary><ul>{aiInsights.notes.map((note,index) => <li key={index}>{note}</li>)}</ul></details>}
-      </>}
-      {!aiInsightsLoading && !aiInsightsError && aiInsights && !(aiInsights.insights || []).length && <div className="adv-insights-state">No insight signals were detected for this dataset yet.</div>}
     </section>
     {error && <div className="alert alert-warning">{error}<button className="text-button ms-2" onClick={() => { setCountry(country); }}>Retry by changing a filter</button></div>}
     <div className="adv-kpi-grid">{kpis.map((item, i) => <article className={`adv-kpi-card adv-kpi-${i}`} key={item.label}><div className="adv-kpi-label">{item.label}</div><div className="adv-kpi-value">{item.format === "currency" ? money(item.value) : number(item.value)}</div><div className="adv-kpi-bottom"><span />Dataset calculated metric</div></article>)}</div>
@@ -262,5 +228,52 @@ export default function ExecutiveDashboard({ dataset, onDashboardData }) {
       })}
     </div>
     <footer className="adv-footer">DataPilot Advanced BI · Metrics recalculate when filters change. Customer segments are inferred from relative recency, order frequency, and revenue; they are not source dataset labels.</footer>
+  </section>;
+}
+
+
+export function AIInsightsPage({ dataset }) {
+  const [aiInsights, setAiInsights] = useState(null);
+  const [aiInsightsLoading, setAiInsightsLoading] = useState(false);
+  const [aiInsightsError, setAiInsightsError] = useState("");
+
+  const loadInsights = () => {
+    if (!dataset?.id) return;
+    setAiInsightsError("");
+    setAiInsightsLoading(true);
+    getUnifiedAIInsights(dataset.id, 10)
+      .then((response) => setAiInsights(response?.data?.data ?? response?.data ?? null))
+      .catch((err) => setAiInsightsError(getApiErrorMessage(err, "Unable to load AI insights.")))
+      .finally(() => setAiInsightsLoading(false));
+  };
+
+  useEffect(() => {
+    setAiInsights(null);
+    loadInsights();
+  }, [dataset?.id]);
+
+  if (!dataset?.id) return <div className="empty-state"><div className="empty-icon">✦</div><h3>Select a dataset first</h3><p>Choose a dataset to generate AI-powered findings and recommended actions.</p></div>;
+
+  return <section className="adv-insights-feed adv-insights-page" aria-label="AI insights feed">
+    <div className="adv-insights-header">
+      <div><span className="adv-insights-kicker">✦ PHASE 6 · AI INSIGHTS ENGINE</span><h2>Insights & recommended actions</h2><p>Evidence-backed findings, unusual patterns, and prioritized actions from this dataset.</p></div>
+      <button type="button" onClick={loadInsights} disabled={aiInsightsLoading}>↻ Refresh insights</button>
+    </div>
+    {aiInsightsLoading && <div className="adv-insights-state"><span className="adv-insights-spinner"/>Analyzing dataset for actionable signals…</div>}
+    {aiInsightsError && <div className="adv-insights-error" role="alert">{aiInsightsError}<button type="button" onClick={loadInsights}>Try again</button></div>}
+    {!aiInsightsLoading && !aiInsightsError && aiInsights && <>
+      <div className="adv-insights-summary"><div><strong>{number(aiInsights.insight_count)}</strong><span>Total signals</span></div><div><strong>{number(aiInsights.counts_by_kind?.finding)}</strong><span>Findings</span></div><div><strong>{number(aiInsights.counts_by_kind?.anomaly)}</strong><span>Anomalies</span></div><div><strong>{number(aiInsights.counts_by_kind?.recommendation)}</strong><span>Recommendations</span></div><div><strong>{number(aiInsights.counts_by_severity?.high + aiInsights.counts_by_severity?.critical + aiInsights.counts_by_severity?.warning)}</strong><span>Priority signals</span></div></div>
+      <div className="adv-insights-cards">{(aiInsights.insights || []).map((item) => <article className={`adv-insight-card adv-severity-${String(item.severity || "neutral").toLowerCase()}`} key={item.id}>
+        <div className="adv-insight-card-top"><span className={`adv-insight-kind adv-kind-${item.kind}`}>{String(item.kind || "signal").replaceAll("_", " ")}</span><span className="adv-insight-severity">{String(item.severity || "neutral").toUpperCase()}</span></div>
+        <h3>{item.title}</h3><p>{item.summary}</p>
+        {item.metric != null && item.value != null && <div className="adv-insight-metric"><span>{titleCase(item.metric.replaceAll("_", " "))}</span><strong>{typeof item.value === "number" ? Number(item.value).toLocaleString("en-IN", {maximumFractionDigits:2}) : String(item.value)}</strong></div>}
+        {item.suggested_action && <div className="adv-insight-action"><strong>Suggested action</strong><span>{item.suggested_action}</span></div>}
+        {item.evidence && Object.keys(item.evidence).length > 0 && <details className="adv-insight-evidence"><summary>Evidence & explanation</summary><dl>{Object.entries(item.evidence).slice(0,6).map(([key,value]) => <div key={key}><dt>{titleCase(key.replaceAll("_"," "))}</dt><dd>{typeof value === "object" && value !== null ? JSON.stringify(value) : String(value)}</dd></div>)}</dl></details>}
+        <div className="adv-insight-card-foot"><span>Confidence: {String(item.confidence || "unspecified")}</span>{item.category && <span>{titleCase(item.category)}</span>}</div>
+        {item.limitations?.length > 0 && <small className="adv-insight-limitations">Limitations: {item.limitations.join(" · ")}</small>}
+      </article>)}</div>
+      {aiInsights.notes?.length > 0 && <details className="adv-insights-methodology"><summary>How these insights are generated</summary><ul>{aiInsights.notes.map((note,index) => <li key={index}>{note}</li>)}</ul></details>}
+    </>}
+    {!aiInsightsLoading && !aiInsightsError && aiInsights && !(aiInsights.insights || []).length && <div className="adv-insights-state">No insight signals were detected for this dataset yet.</div>}
   </section>;
 }
