@@ -486,29 +486,51 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
     def grouped_top(column, label):
         if not isinstance(column, str) or column not in df.columns:
             raise HTTPException(status_code=422, detail=f"Could not identify a {label} column in this dataset.")
-        # Respect explicit ranking sizes (e.g. "top 5") and conversational expansion.
-        # Keep the limit bounded so a natural-language request cannot create huge responses.
-        explicit_limit = re.search(r"\btop\s+(\d{1,2})\b", follow_up)
+
+        # Apply explicit geographic scope before aggregation (e.g. "in United Kingdom").
+        scoped_df = df
+        country_filter = None
+        if isinstance(country_col, str) and country_col in df.columns:
+            country_values = df[country_col].dropna().astype(str).unique()
+            normalized_values = {re.sub(r"[^a-z0-9]", "", value.lower()): value for value in country_values}
+            location_terms = re.findall(r"\\b(?:in|within|for)\\s+([a-z][a-z ]{1,40}?)(?=\\s+(?:by|with|and|where)\\b|[?.!,]|$)", follow_up)
+            for term in reversed(location_terms):
+                normalized_term = re.sub(r"[^a-z0-9]", "", term.lower()).strip()
+                if normalized_term in normalized_values:
+                    country_filter = normalized_values[normalized_term]
+                    scoped_df = df[df[country_col].astype(str).str.lower() == country_filter.lower()]
+                    break
+
+        quantity_col = mapping.get("quantity")
+        asks_quantity = any(term in follow_up for term in ("units sold", "quantity", "most sold", "sold maximum", "maximum sold", "maximum units", "highest quantity", "number of units", "volume sold"))
+        if asks_quantity and isinstance(quantity_col, str) and quantity_col in scoped_df.columns:
+            metric_values = pd.to_numeric(scoped_df[quantity_col], errors="coerce")
+            metric = "quantity sold"
+        elif revenue is not None:
+            metric_values = revenue.loc[scoped_df.index]
+            metric = "revenue"
+        else:
+            metric_values = None
+            metric = "row count"
+
+        explicit_limit = re.search(r"\\btop\\s+(\\d{1,2})\\b", follow_up)
         if explicit_limit:
             result_limit = max(1, min(50, int(explicit_limit.group(1))))
         else:
-            asks_for_more = any(
-                term in follow_up
-                for term in ("show me more", "more results", "more products", "more countries", "show more", "expand", "top 20", "20 items")
-            )
+            asks_for_more = any(term in follow_up for term in ("show me more", "more results", "more products", "more countries", "show more", "expand", "top 20", "20 items"))
             result_limit = 20 if asks_for_more else 10
-        if revenue is None:
-            grouped = df[column].dropna().astype(str).value_counts().head(result_limit)
-            rows = [{"label": str(k), "value": int(v)} for k, v in grouped.items()]
-            metric = "row count"
-        else:
-            grouped = pd.DataFrame({"group": df[column].astype("string"), "value": revenue}).dropna(subset=["group"]).groupby("group", dropna=False)["value"].sum().sort_values(ascending=False).head(result_limit)
-            rows = [{"label": str(k), "value": float(v)} for k, v in grouped.items()]
-            metric = "revenue"
 
-        chart = {"type": "bar", "title": f"Top {len(rows)} {label.title()} by {metric.title()}", "metric": metric, "data": rows}
+        if metric_values is None:
+            grouped = scoped_df[column].dropna().astype(str).value_counts().head(result_limit)
+            rows = [{"label": str(k), "value": int(v)} for k, v in grouped.items()]
+        else:
+            grouped = pd.DataFrame({"group": scoped_df[column].astype("string"), "value": metric_values}).dropna(subset=["group"]).groupby("group", dropna=False)["value"].sum().sort_values(ascending=False).head(result_limit)
+            rows = [{"label": str(k), "value": float(v)} for k, v in grouped.items()]
+
+        scope_note = f" in {country_filter}" if country_filter else ""
+        chart = {"type": "bar", "title": f"Top {len(rows)} {label.title()} by {metric.title()}{scope_note}", "metric": metric, "data": rows}
         is_followup_why = bool(previous_question) and any(term in follow_up for term in ("why", "explain"))
-        asks_for_single_leader = any(term in follow_up for term in ("highest", "most", "which", "who generated", "leading", "number one", "no 1", "top country", "top product"))
+        asks_for_single_leader = any(term in follow_up for term in ("highest", "most", "maximum", "max", "which", "who generated", "leading", "number one", "no 1", "top country", "top product", "sold maximum"))
         if not rows:
             answer = f"No {label} values were available to rank in this dataset."
         elif is_followup_why:
@@ -524,7 +546,8 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
             else:
                 answer = f"{leader['label']} ranks first by {metric} at {leader['value']:,.2f}. The dataset shows the ranking, but not the underlying cause."
         elif asks_for_single_leader:
-            answer = f"{rows[0]['label']} generated the highest {metric} among the {label}, at {rows[0]['value']:,.2f}."
+            verb = "sold the most units" if metric == "quantity sold" else f"generated the highest {metric}"
+            answer = f"{rows[0]['label']} {verb} among the {label}{scope_note}, at {rows[0]['value']:,.2f}."
         else:
             answer = f"Here are the top {len(rows)} {label} by {metric}."
         return {"question": question.strip(), "answer": answer, "chart": chart, "source": "dataset", "rows_analyzed": int(len(df))}
