@@ -11,6 +11,22 @@ export default function AnomalyDetection({ dataset }) {
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [reviewStatuses, setReviewStatuses] = useState({});
+  const [reviewFilter, setReviewFilter] = useState("all");
+
+  useEffect(() => {
+    if (!dataset?.id) { setReviewStatuses({}); return; }
+    try { setReviewStatuses(JSON.parse(localStorage.getItem(`datapilot-anomaly-review-${dataset.id}`) || "{}")); }
+    catch { setReviewStatuses({}); }
+  }, [dataset?.id]);
+
+  const setReviewStatus = (anomalyId, status) => {
+    setReviewStatuses((previous) => {
+      const next = { ...previous, [anomalyId]: status };
+      try { localStorage.setItem(`datapilot-anomaly-review-${dataset.id}`, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
 
   const load = async () => {
     if (!dataset?.id) { setPayload(null); return; }
@@ -31,6 +47,8 @@ export default function AnomalyDetection({ dataset }) {
   const anomalies = payload?.anomalies || [];
   const high = anomalies.filter((item) => item.severity === "high").length;
   const medium = anomalies.filter((item) => item.severity === "medium").length;
+  const reviewCounts = { open: anomalies.filter((item) => (reviewStatuses[item.id] || "open") === "open").length, investigating: anomalies.filter((item) => reviewStatuses[item.id] === "investigating").length, resolved: anomalies.filter((item) => reviewStatuses[item.id] === "resolved").length, dismissed: anomalies.filter((item) => reviewStatuses[item.id] === "dismissed").length };
+  const visibleAnomalies = anomalies.filter((item) => reviewFilter === "all" || (reviewStatuses[item.id] || "open") === reviewFilter);
 
   if (!dataset) return <div className="empty-state"><div className="empty-icon">⌁</div><h3>Select a dataset first</h3><p>Upload or select a dataset to run anomaly detection.</p></div>;
 
@@ -55,14 +73,14 @@ export default function AnomalyDetection({ dataset }) {
     </div>
 
     <div className="panel-card anomaly-results">
-      <div className="section-heading inner-heading"><div><h3>Anomaly findings</h3><p>Ranked by robust outlier score · evidence shown for each result</p></div><span className="subtle-count">{number(anomalies.length)} results</span></div>
-      {loading ? <div className="empty-inline">Analyzing dataset records…</div> : anomalies.length ? <div className="anomaly-list">
-        {anomalies.map((item) => {
+      <div className="section-heading inner-heading"><div><h3>Anomaly findings</h3><p>Ranked by robust outlier score · evidence shown for each result</p></div><div className="anomaly-review-toolbar"><select aria-label="Filter review status" value={reviewFilter} onChange={(e) => setReviewFilter(e.target.value)}><option value="all">All findings ({number(anomalies.length)})</option><option value="open">Open ({number(reviewCounts.open)})</option><option value="investigating">Investigating ({number(reviewCounts.investigating)})</option><option value="resolved">Resolved ({number(reviewCounts.resolved)})</option><option value="dismissed">Dismissed ({number(reviewCounts.dismissed)})</option></select><span className="subtle-count">{number(visibleAnomalies.length)} shown</span></div></div>
+      {loading ? <div className="empty-inline">Analyzing dataset records…</div> : visibleAnomalies.length ? <div className="anomaly-list">
+        {visibleAnomalies.map((item) => {
           const evidence = item.evidence || {};
           const amount = evidence.revenue ?? evidence.value;
           return <article className="anomaly-item" key={item.id}>
             <div className="anomaly-item-top"><span className={`anomaly-severity severity-${item.severity || "medium"}`}>{String(item.severity || "medium").toUpperCase()}</span><span className="anomaly-category">{item.category || "finding"} · score {number(item.score)}</span></div>
-            <h4>{item.title || "Unusual data point"}</h4><p>{item.description}</p>
+            <div className="anomaly-review-title"><h4>{item.title || "Unusual data point"}</h4><span className={`anomaly-review-status status-${reviewStatuses[item.id] || "open"}`}>{(reviewStatuses[item.id] || "open").replace("investigating", "In progress")}</span></div><p>{item.description}</p>
             <div className="anomaly-evidence">
               {evidence.period && <span><small>Period</small><b>{evidence.period}</b></span>}
               {evidence.row_index != null && <span><small>Row index</small><b>{number(evidence.row_index)}</b></span>}
@@ -72,10 +90,10 @@ export default function AnomalyDetection({ dataset }) {
               {evidence.direction && <span><small>Direction</small><b>{evidence.direction} baseline</b></span>}
               {evidence.robust_z_score != null && <span><small>Robust z-score</small><b>{number(evidence.robust_z_score)}</b></span>}
             </div>
-            {!!item.limitations?.length && <details><summary>Limitations & review notes</summary><ul>{item.limitations.map((note, index) => <li key={index}>{note}</li>)}</ul></details>}
+            <div className="anomaly-review-actions">{(reviewStatuses[item.id] || "open") === "open" && <button onClick={() => setReviewStatus(item.id, "investigating")}>Start review</button>}{(reviewStatuses[item.id] || "open") === "investigating" && <button onClick={() => setReviewStatus(item.id, "resolved")}>Mark resolved</button>}{(reviewStatuses[item.id] || "open") !== "dismissed" && <button className="muted-action" onClick={() => setReviewStatus(item.id, "dismissed")}>Dismiss</button>}{["resolved", "dismissed"].includes(reviewStatuses[item.id]) && <button className="muted-action" onClick={() => setReviewStatus(item.id, "open")}>Reopen</button>}</div>\n            {!!item.limitations?.length && <details><summary>Limitations & review notes</summary><ul>{item.limitations.map((note, index) => <li key={index}>{note}</li>)}</ul></details>}
           </article>;
         })}
-      </div> : <div className="anomaly-empty"><div>✓</div><h3>No outliers detected at this threshold</h3><p>Try a more sensitive threshold or inspect the unavailable checks below.</p></div>}
+      </div> : <div className="anomaly-empty"><div>✓</div><h3>{anomalies.length ? "No findings match this review filter" : "No outliers detected at this threshold"}</h3><p>{anomalies.length ? "Change the review status filter to see other findings." : "Try a more sensitive threshold or inspect the unavailable checks below."}</p></div>}
     </div>
 
     {!!payload?.unavailable_checks?.length && <div className="panel-card anomaly-notes"><h3>Checks unavailable</h3>{payload.unavailable_checks.map((item, index) => <p key={index}><strong>{item.category}:</strong> {item.reason}</p>)}</div>}
