@@ -562,3 +562,42 @@
 .adv-recommendation-status{width:max-content;border-radius:20px;padding:4px 8px;font-size:8px;font-weight:900;text-transform:capitalize}.adv-status-label-open{background:#7889ff18;color:#9ba8ff}.adv-status-label-in_progress{background:#ffad5518;color:#ffbd70}.adv-status-label-resolved{background:#46c6b618;color:#55d3c0}.adv-status-label-dismissed{background:#9aa6bb18;color:var(--adv-muted)}
 .adv-status-resolved{opacity:.84}.adv-status-resolved h3{text-decoration:line-through;text-decoration-color:#46c6b680}.adv-status-dismissed{opacity:.58}
 @media(max-width:760px){.adv-insight-filter button{flex:1 1 auto}.adv-recommendation-actions>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.adv-recommendation-actions button{width:100%}}
+
+/* Phase 8: revenue forecasting workspace */
+.forecast-page{display:flex;flex-direction:column;gap:20px}
+.forecast-heading{align-items:flex-end;gap:24px;flex-wrap:wrap}
+.forecast-controls{display:flex;gap:12px;flex-wrap:wrap}
+.forecast-controls label{display:flex;flex-direction:column;gap:7px;color:var(--muted);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.forecast-controls select{min-width:145px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;letter-spacing:normal;text-transform:none}
+.forecast-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.forecast-kpis .panel-card{display:flex;flex-direction:column;gap:10px;padding:20px}
+.forecast-kpis strong{font-size:clamp(18px,2vw,26px);font-weight:800;letter-spacing:-.04em;overflow-wrap:anywhere}
+.forecast-kpis small{font-size:11px;color:var(--muted)}
+.forecast-model-label{font-size:18px!important}
+.forecast-visual-card,.forecast-table-card,.forecast-notes{padding:22px}
+.forecast-card-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.forecast-card-heading h2{font-size:19px;margin:6px 0 0;font-weight:800}
+.forecast-pill{border:1px solid var(--border);border-radius:999px;padding:7px 10px;color:var(--muted);font-size:11px;white-space:nowrap}
+.forecast-chart-wrap{width:100%;overflow-x:auto}
+.forecast-chart{width:100%;min-width:640px;height:auto;display:block;overflow:visible}
+.forecast-gridline{stroke:var(--border);stroke-width:1;opacity:.75}
+.forecast-axis-label{fill:var(--muted);font-size:11px}
+.forecast-actual-line{fill:none;stroke:#7c8cff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.forecast-prediction-line{fill:none;stroke:#45d6bd;stroke-width:3;stroke-dasharray:7 5;stroke-linecap:round;stroke-linejoin:round}
+.forecast-band{fill:#45d6bd;opacity:.15}
+.forecast-divider{stroke:var(--muted);stroke-width:1.2;stroke-dasharray:4 5;opacity:.7}
+.forecast-legend{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;padding:8px 0 2px;color:var(--muted);font-size:11px}
+.forecast-legend span{display:flex;align-items:center;gap:8px}
+.forecast-legend i{display:inline-block;width:18px;height:3px;border-radius:2px}
+.forecast-legend-actual{background:#7c8cff}
+.forecast-legend-prediction{background:#45d6bd}
+.forecast-legend-band{height:10px!important;background:#45d6bd;opacity:.25}
+.forecast-table{margin:0;color:var(--text);--bs-table-bg:transparent;--bs-table-color:var(--text);--bs-table-border-color:var(--border);font-size:13px}
+.forecast-table th{color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.forecast-table td{white-space:nowrap}
+.forecast-notes h3{font-size:15px;font-weight:800;margin:0 0 12px}
+.forecast-notes ul{padding-left:18px;margin:0;color:var(--muted);font-size:12px;line-height:1.8}
+.forecast-message{color:var(--muted)}
+.forecast-error{border-color:rgba(255,100,100,.35);color:#ff9292}
+@media(max-width:1100px){.forecast-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.forecast-kpis{grid-template-columns:1fr}.forecast-controls{width:100%}.forecast-controls label{flex:1}.forecast-controls select{min-width:0;width:100%}.forecast-visual-card,.forecast-table-card,.forecast-notes{padding:15px}.forecast-card-heading{align-items:flex-start;flex-direction:column}}
