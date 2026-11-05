@@ -493,13 +493,16 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
         if isinstance(country_col, str) and country_col in df.columns:
             country_values = df[country_col].dropna().astype(str).unique()
             normalized_values = {re.sub(r"[^a-z0-9]", "", value.lower()): value for value in country_values}
-            location_terms = re.findall(r"\\b(?:in|within|for)\\s+([a-z][a-z ]{1,40}?)(?=\\s+(?:by|with|and|where)\\b|[?.!,]|$)", follow_up)
+            location_terms = re.findall(r"\b(?:in|within|for)\s+([a-z][a-z ]{1,40}?)(?=\s+(?:by|with|and|where)\b|[?.!,]|$)", follow_up)
             for term in reversed(location_terms):
                 normalized_term = re.sub(r"[^a-z0-9]", "", term.lower()).strip()
                 if normalized_term in normalized_values:
                     country_filter = normalized_values[normalized_term]
                     scoped_df = df[df[country_col].astype(str).str.lower() == country_filter.lower()]
                     break
+            if location_terms and country_filter is None:
+                requested_location = location_terms[-1].strip()
+                raise HTTPException(status_code=422, detail=f"Could not match the requested country '{requested_location}' to values in the dataset. No country filter was applied.")
 
         quantity_col = mapping.get("quantity")
         asks_quantity = any(term in follow_up for term in ("units sold", "quantity", "most sold", "sold maximum", "maximum sold", "maximum units", "highest quantity", "number of units", "volume sold"))
@@ -513,7 +516,7 @@ def ask_dataset_question(dataset_id: int, payload: dict = Body(...), db: Session
             metric_values = None
             metric = "row count"
 
-        explicit_limit = re.search(r"\\btop\\s+(\\d{1,2})\\b", follow_up)
+        explicit_limit = re.search(r"\btop\s+(\d{1,2})\b", follow_up)
         if explicit_limit:
             result_limit = max(1, min(50, int(explicit_limit.group(1))))
         else:
