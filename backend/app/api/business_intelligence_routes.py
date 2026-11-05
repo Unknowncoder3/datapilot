@@ -613,3 +613,24 @@ def unified_ai_insights(
         }
     except (TypeError, ValueError) as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+from app.services.business_intelligence.forecast_engine import forecast_revenue
+
+
+@router.get("/{dataset_id}/bi/forecast/revenue")
+def revenue_forecast(
+    dataset_id: int,
+    horizon: int = 6,
+    frequency: str = "month",
+    db: Session = Depends(get_db),
+):
+    """Return a transparent baseline forecast for dataset revenue."""
+    df = _load_dataset(dataset_id, db)
+    try:
+        return {
+            "dataset_id": dataset_id,
+            **forecast_revenue(df, horizon=horizon, frequency=frequency),
+        }
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
