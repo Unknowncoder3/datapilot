@@ -153,3 +153,10 @@ export const askBusinessQuestion = (datasetId, question, conversation = []) =>
 // Phase 6: unified evidence-backed AI insights feed.
 export const getUnifiedAIInsights = (datasetId, topN = 10) =>
   api.get(`/analytics/${datasetId}/bi/ai-insights`, { params: { top_n: topN } });
+
+
+// Phase 8: baseline predictive analytics.
+export const getRevenueForecast = (datasetId, { horizon = 6, frequency = "month" } = {}) =>
+  api.get(`/analytics/${datasetId}/bi/forecast/revenue`, {
+    params: { horizon, frequency },
+  });
