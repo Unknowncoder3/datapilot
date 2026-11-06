@@ -140,6 +140,7 @@ export default function ReportsWorkspace({ dataset }) {
     {activeReport && <section className="report-viewer panel-card">
       <div className="report-viewer-heading"><div><div className="report-section-kicker">REPORT PREVIEW</div><h2>{activeReport.title || "Untitled report"}</h2><p>{titleCase(activeReport.report_type || reportContent.report_type || "summary")} · Generated {fmtDate(activeReport.created_at || reportContent.generated_at)}</p></div><button className="report-close-button" onClick={() => setActiveReport(null)}>Close ×</button></div>
       {reportContent.executive_analysis && <div className="report-content-section"><div className="report-content-title"><span>↗</span><div><h3>Executive business analysis</h3><p>Management-facing performance trends, findings, and recommendations.</p></div></div><ReportValue value={reportContent.executive_analysis}/></div>}
+      {!reportContent.executive_analysis && <>
       <div className="report-overview-kpis">
         {[["Rows",overview.row_count],["Columns",overview.column_count],["Numeric fields",overview.numeric_column_count],["Missing cells",overview.missing_cells],["Duplicate rows",overview.duplicate_rows]].map(([label,value]) => <div key={label}><small>{label}</small><strong>{fmtNum(value)}</strong></div>)}
       </div>
@@ -149,6 +150,7 @@ export default function ReportsWorkspace({ dataset }) {
       {(reportContent.correlation || reportContent.correlations) && <div className="report-content-section"><div className="report-content-title"><span>⌁</span><div><h3>Correlation analysis</h3><p>Relationships between numeric columns.</p></div></div><ReportValue value={reportContent.correlation || reportContent.correlations}/></div>}
       {(reportContent.sample_rows || reportContent.preview || reportContent.row_preview) && <div className="report-content-section"><div className="report-content-title"><span>▤</span><div><h3>Sample rows</h3><p>{fmtNum(reportContent.sample_row_count)} source records shown (maximum 20).</p></div></div><ReportValue value={reportContent.sample_rows || reportContent.preview || reportContent.row_preview}/></div>}
       {!Object.keys(overview).length && !Object.keys(stats).length && <div className="report-empty-state">Report content is unavailable or uses a different schema.</div>}
+      </>}
     </section>}
   </section>;
 }
