@@ -1,12 +1,20 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ReportCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     report_type: Literal["summary", "full"] = "summary"
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Report title cannot be blank.")
+        return value
 
 
 class ReportRead(BaseModel):
