@@ -78,7 +78,8 @@ def test_build_executive_report_includes_management_analysis(tmp_path):
     assert analysis["metric_formula"] == "Quantity multiplied by UnitPrice"
     assert analysis["trend"]["date_field"] == "InvoiceDate"
     assert len(analysis["trend"]["series"]) == 2
-    assert analysis["trend"]["period_change"]["direction"] == "up"
+    assert analysis["trend"]["period_change"]["direction"] == "down"
+    assert analysis["trend"]["period_change"]["absolute_change"] == -10.0
     assert analysis["key_findings"]
     assert analysis["management_recommendations"]
 
