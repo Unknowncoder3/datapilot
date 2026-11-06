@@ -121,7 +121,7 @@ def _build_executive_analysis(df: pd.DataFrame) -> dict:
                 trough={"period":str(grouped.idxmin()),"value":_clean_value(grouped.min())}
 
     breakdowns=[]
-    dimensions=[c for c in df.columns if c!=date_col and c!=measure and (pd.api.types.is_object_dtype(df[c]) or pd.api.types.is_string_dtype(df[c]) or pd.api.types.is_categorical_dtype(df[c])) and 2<=df[c].nunique(dropna=True)<=100]
+    dimensions=[c for c in df.columns if c!=date_col and c!=measure and (pd.api.types.is_object_dtype(df[c]) or pd.api.types.is_string_dtype(df[c]) or isinstance(df[c].dtype, pd.CategoricalDtype)) and 2<=df[c].nunique(dropna=True)<=100]
     if metric_series is not None:
         for column in dimensions[:4]:
             temp=pd.DataFrame({"dimension":df[column].astype("string").fillna("Unknown"),"metric":metric_series})
