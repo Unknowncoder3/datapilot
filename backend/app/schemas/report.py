@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class ReportCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
-    report_type: Literal["summary", "full"] = "summary"
+    report_type: Literal["summary", "full", "executive"] = "executive"
 
     @field_validator("title")
     @classmethod
