@@ -14,8 +14,8 @@ from app.services.profiler import profile_dataframe, read_dataset
 
 def build_report_content(dataset_path: Path, report_type: str = "summary") -> dict:
     """Build a JSON-safe, dataset-grounded report from an uploaded file."""
-    if report_type not in {"summary", "full"}:
-        raise ValueError("Report type must be 'summary' or 'full'.")
+    if report_type not in {"summary", "full", "executive"}:
+        raise ValueError("Report type must be 'summary', 'full', or 'executive'.")
 
     path = Path(dataset_path).resolve()
     if not path.is_file():
@@ -40,6 +40,9 @@ def build_report_content(dataset_path: Path, report_type: str = "summary") -> di
         },
         "descriptive_statistics": get_descriptive_statistics(df),
     }
+
+    if report_type == "executive":
+        content["executive_analysis"] = _build_executive_analysis(df.copy())
 
     if report_type == "full":
         content["correlation"] = get_correlation_matrix(df)
