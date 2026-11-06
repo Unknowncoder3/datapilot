@@ -86,6 +86,44 @@ def test_build_executive_report_includes_management_analysis(tmp_path):
     assert analysis["management_recommendations"]
 
 
+
+def test_executive_report_flags_partial_month_and_calculates_like_for_like(tmp_path):
+    dataset_path = tmp_path / "partial_month.csv"
+    pd.DataFrame({
+        "InvoiceDate": ["2025-11-01", "2025-11-09", "2025-11-20", "2025-12-01", "2025-12-09"],
+        "Revenue": [100, 200, 300, 150, 250],
+        "Country": ["East", "West", "East", "East", "West"],
+    }).to_csv(dataset_path, index=False)
+
+    analysis = build_report_content(dataset_path, "executive")["executive_analysis"]
+    change = analysis["trend"]["period_change"]
+    comparable = change["like_for_like"]
+
+    assert change["direction"] == "down"
+    assert comparable["partial_period"] is True
+    assert comparable["cutoff_day"] == 9
+    assert comparable["previous_value"] == 300.0
+    assert comparable["current_value"] == 400.0
+    assert comparable["direction"] == "up"
+    assert comparable["percentage_change"] == pytest.approx(33.333333)
+    assert "observed only through day 9" in comparable["warning"]
+    assert any("partial" in note.lower() for note in analysis["analysis_notes"])
+
+
+def test_executive_breakdowns_include_contribution_percentages(tmp_path):
+    dataset_path = tmp_path / "segments.csv"
+    pd.DataFrame({
+        "Revenue": [75, 25, 50],
+        "Country": ["East", "West", "East"],
+    }).to_csv(dataset_path, index=False)
+
+    analysis = build_report_content(dataset_path, "executive")["executive_analysis"]
+    country = next(item for item in analysis["performance_breakdowns"] if item["dimension"] == "Country")
+    leaders = {item["name"]: item["contribution_pct"] for item in country["leaders"]}
+
+    assert leaders["East"] == pytest.approx(125 / 150 * 100)
+    assert leaders["West"] == pytest.approx(25 / 150 * 100)
+
 def test_report_create_defaults_to_executive_type():
     request = ReportCreate(title="Monthly Business Review")
     assert request.report_type == "executive"
