@@ -108,14 +108,25 @@ def _build_executive_analysis(df: pd.DataFrame) -> dict:
     peak=None
     trough=None
     if date_col is not None and metric_series is not None:
-        frame=pd.DataFrame({"period":pd.to_datetime(df[date_col],errors="coerce"),"metric":metric_series}).dropna()
+        frame=pd.DataFrame({"date":pd.to_datetime(df[date_col],errors="coerce"),"metric":metric_series}).dropna()
         if not frame.empty:
-            frame["period"]=frame["period"].dt.to_period("M").astype(str)
+            frame["period"]=frame["date"].dt.to_period("M").astype(str)
             grouped=frame.groupby("period",sort=True)["metric"].sum()
             trend=[{"period":str(period),"value":_clean_value(value)} for period,value in grouped.items()]
             if len(grouped)>=2:
                 prior=float(grouped.iloc[-2]); latest=float(grouped.iloc[-1])
                 change={"period":str(grouped.index[-1]),"previous_period":str(grouped.index[-2]),"current_value":_clean_value(latest),"previous_value":_clean_value(prior),"absolute_change":_clean_value(latest-prior),"percentage_change":_clean_value(((latest-prior)/abs(prior)*100) if prior else None),"direction":"up" if latest>prior else "down" if latest<prior else "flat"}
+                latest_period=frame["date"].max().to_period("M")
+                latest_cutoff=int(frame.loc[frame["date"].dt.to_period("M")==latest_period,"date"].dt.day.max())
+                latest_month_end=latest_period.days_in_month
+                partial=latest_cutoff<latest_month_end
+                previous_period=latest_period-1
+                current_slice=frame[(frame["date"].dt.to_period("M")==latest_period)&(frame["date"].dt.day<=latest_cutoff)]
+                previous_slice=frame[(frame["date"].dt.to_period("M")==previous_period)&(frame["date"].dt.day<=latest_cutoff)]
+                current_lfl=float(current_slice["metric"].sum())
+                previous_lfl=float(previous_slice["metric"].sum())
+                lfl_delta=current_lfl-previous_lfl
+                change["like_for_like"]={"period":str(latest_period),"previous_period":str(previous_period),"cutoff_day":latest_cutoff,"current_value":_clean_value(current_lfl),"previous_value":_clean_value(previous_lfl),"absolute_change":_clean_value(lfl_delta),"percentage_change":_clean_value((lfl_delta/abs(previous_lfl)*100) if previous_lfl else None),"direction":"up" if lfl_delta>0 else "down" if lfl_delta<0 else "flat","partial_period":partial,"warning":f"{latest_period} data is observed only through day {latest_cutoff}; the comparison uses days 1–{latest_cutoff} for both periods." if partial else "The latest period appears complete based on the observed maximum date."}
             if not grouped.empty:
                 peak={"period":str(grouped.idxmax()),"value":_clean_value(grouped.max())}
                 trough={"period":str(grouped.idxmin()),"value":_clean_value(grouped.min())}
@@ -126,7 +137,7 @@ def _build_executive_analysis(df: pd.DataFrame) -> dict:
         for column in dimensions[:4]:
             temp=pd.DataFrame({"dimension":df[column].astype("string").fillna("Unknown"),"metric":metric_series})
             agg=temp.groupby("dimension",dropna=False)["metric"].sum().sort_values(ascending=False).head(8)
-            breakdowns.append({"dimension":str(column),"leaders":[{"name":str(name),"value":_clean_value(value)} for name,value in agg.items()]})
+            breakdowns.append({"dimension":str(column),"leaders":[{"name":str(name),"value":_clean_value(value),"contribution_pct":_clean_value((float(value)/total*100) if total else None)} for name,value in agg.items()]})
 
     observations=[]
     if change:
@@ -168,7 +179,8 @@ def _build_executive_analysis(df: pd.DataFrame) -> dict:
         "analysis_notes":[
             "Findings are calculated from the uploaded dataset; they are descriptive and do not establish causation.",
             "Where a business value is derived, the formula is shown explicitly.",
-            "A date trend is shown only when a date field could be parsed with reasonable confidence."
+            "A date trend is shown only when a date field could be parsed with reasonable confidence.",
+            *([change["like_for_like"]["warning"]+" Period-over-period headline values remain raw monthly totals; use the like-for-like comparison for a more comparable read." ] if change and change.get("like_for_like") and change["like_for_like"]["partial_period"] else [])
         ]
     }
 
