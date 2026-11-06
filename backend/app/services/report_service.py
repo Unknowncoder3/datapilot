@@ -145,7 +145,13 @@ def _build_executive_analysis(df: pd.DataFrame) -> dict:
         pct_text = f"{float(pct):+,.2f}%" if pct is not None else "N/A"
         absolute_text = f"{float(change['absolute_change']):+,.2f}"
         movement_word = "increased" if change["direction"] == "up" else "decreased" if change["direction"] == "down" else "was unchanged"
-        observations.append({"title":f"Period-over-period movement: {change['direction']}","detail":f"From {change['previous_period']} to {change['period']}, the metric {movement_word} by {pct_text} ({absolute_text} in absolute terms)."})
+        detail=f"From {change['previous_period']} to {change['period']}, the metric {movement_word} by {pct_text} ({absolute_text} in absolute terms)."
+        comparable=change.get("like_for_like")
+        if comparable and comparable.get("partial_period"):
+            comparable_pct=comparable.get("percentage_change")
+            comparable_text=f"{float(comparable_pct):+,.2f}%" if comparable_pct is not None else "N/A"
+            detail += f" However, {change['period']} is incomplete (data through day {comparable['cutoff_day']}); comparing days 1–{comparable['cutoff_day']} across both months shows {comparable['direction']} movement of {comparable_text}."
+        observations.append({"title":f"Period-over-period movement: {change['direction']}","detail":detail})
     if peak:
         observations.append({"title":"Peak period","detail":f"The highest monthly {measure_label or 'metric'} was {float(peak['value']):,.2f} in {peak['period']}."})
     if trough:
@@ -158,10 +164,11 @@ def _build_executive_analysis(df: pd.DataFrame) -> dict:
         observations.append({"title":"Trend analysis unavailable","detail":"The dataset does not contain a sufficiently reliable date field and business measure for time-based comparisons. Review field mapping to enable trend reporting."})
 
     recommendations=[]
-    if change and change["direction"]=="down":
-        recommendations.append("Investigate the latest period decline by segment, product, geography, and customer cohort; validate whether the movement is seasonal or operational.")
-    elif change and change["direction"]=="up":
-        recommendations.append("Validate the latest period growth drivers and assess whether the strongest segments can be scaled sustainably.")
+    comparable_direction=change.get("like_for_like",{}).get("direction") if change and change.get("like_for_like",{}).get("partial_period") else (change["direction"] if change else None)
+    if comparable_direction=="down":
+        recommendations.append("Investigate the comparable-period decline by segment, product, geography, and customer cohort; validate whether the movement is seasonal or operational.")
+    elif comparable_direction=="up":
+        recommendations.append("Validate the comparable-period growth drivers and assess whether the strongest segments can be scaled sustainably.")
     if breakdowns and breakdowns[0]["leaders"]:
         recommendations.append(f"Review the concentration in the leading {breakdowns[0]['dimension']} segment and compare its performance with lower-ranked segments.")
     recommendations.append("Confirm metric definitions and data completeness before using this report for financial or operational decisions.")
