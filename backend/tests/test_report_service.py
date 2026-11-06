@@ -1,6 +1,8 @@
 import pandas as pd
 import pytest
+from pydantic import ValidationError
 
+from app.schemas.report import ReportCreate
 from app.services.report_service import build_report_content
 
 
@@ -48,3 +50,13 @@ def test_report_rejects_unknown_type(tmp_path):
 def test_report_rejects_missing_file(tmp_path):
     with pytest.raises(FileNotFoundError):
         build_report_content(tmp_path / "missing.csv")
+
+
+def test_report_title_is_trimmed():
+    request = ReportCreate(title="  Monthly Sales  ")
+    assert request.title == "Monthly Sales"
+
+
+def test_report_title_rejects_whitespace():
+    with pytest.raises(ValidationError):
+        ReportCreate(title="   ")
