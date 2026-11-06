@@ -131,11 +131,14 @@ def _build_executive_analysis(df: pd.DataFrame) -> dict:
     observations=[]
     if change:
         pct=change.get("percentage_change")
-        observations.append({"title":f"Period-over-period movement: {change['direction']}","detail":f"{change['period']} changed by {change['percentage_change'] if pct is not None else 'N/A'}% compared with {change['previous_period']}. The absolute movement was {change['absolute_change']}."})
+        pct_text = f"{float(pct):+,.2f}%" if pct is not None else "N/A"
+        absolute_text = f"{float(change['absolute_change']):+,.2f}"
+        movement_word = "increased" if change["direction"] == "up" else "decreased" if change["direction"] == "down" else "was unchanged"
+        observations.append({"title":f"Period-over-period movement: {change['direction']}","detail":f"From {change['previous_period']} to {change['period']}, the metric {movement_word} by {pct_text} ({absolute_text} in absolute terms)."})
     if peak:
-        observations.append({"title":"Peak period","detail":f"The highest monthly {measure_label or 'metric'} was {peak['value']} in {peak['period']}."})
+        observations.append({"title":"Peak period","detail":f"The highest monthly {measure_label or 'metric'} was {float(peak['value']):,.2f} in {peak['period']}."})
     if trough:
-        observations.append({"title":"Lowest period","detail":f"The lowest monthly {measure_label or 'metric'} was {trough['value']} in {trough['period']}."})
+        observations.append({"title":"Lowest period","detail":f"The lowest monthly {measure_label or 'metric'} was {float(trough['value']):,.2f} in {trough['period']}."})
     for item in breakdowns[:3]:
         if item["leaders"]:
             leader=item["leaders"][0]
