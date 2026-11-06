@@ -160,3 +160,10 @@ export const getRevenueForecast = (datasetId, { horizon = 6, frequency = "month"
   api.get(`/analytics/${datasetId}/bi/forecast/revenue`, {
     params: { horizon, frequency },
   });
+
+
+// Phase 12: automated reporting workspace.
+export const createReport = (datasetId, payload) => api.post(`/datasets/${datasetId}/reports`, payload);
+export const getDatasetReports = (datasetId, limit = 50) => api.get(`/datasets/${datasetId}/reports`, { params: { limit } });
+export const getReport = (reportId) => api.get(`/reports/${reportId}`);
+export const deleteReport = (reportId) => api.delete(`/reports/${reportId}`);
