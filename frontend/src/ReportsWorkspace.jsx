@@ -49,6 +49,43 @@ function ReportCard({ report, onOpen, onDelete }) {
   </article>;
 }
 
+
+function ExecutiveReportView({ analysis }) {
+  const fmtMetric = (value) => {
+    if (value == null || !Number.isFinite(Number(value))) return "—";
+    const n = Number(value);
+    return Math.abs(n) >= 1e6 ? n.toLocaleString("en-IN",{maximumFractionDigits:2}) : n.toLocaleString("en-IN",{maximumFractionDigits:2});
+  };
+  const change = analysis.trend?.period_change;
+  const series = analysis.trend?.series || [];
+  const vals = series.map((p) => Number(p.value || 0));
+  const min = Math.min(0,...vals), max = Math.max(1,...vals), span = Math.max(1,max-min);
+  const points = vals.map((v,i)=>({x:35+i*730/Math.max(1,vals.length-1),y:205-(v-min)/span*160}));
+  const line = points.map(p=>p.x+","+p.y).join(" ");
+  return <div className="executive-report">
+    <section className="executive-report-summary">
+      <div><span className="executive-report-kicker">MANAGEMENT OVERVIEW</span><h3>{analysis.report_title || "Executive Business Performance Report"}</h3><p>{analysis.executive_summary || "Performance overview calculated from the uploaded dataset."}</p><small>Primary measure: {analysis.metric_name || "Observed metric"}{analysis.metric_formula ? " · Formula: "+analysis.metric_formula : ""}</small></div>
+    </section>
+    <section className="executive-report-kpis">
+      {(analysis.kpis || []).map((kpi,i)=><article key={i}><span>{kpi.label}</span><strong>{fmtMetric(kpi.value)}</strong>{kpi.metric && <small>{kpi.metric}</small>}</article>)}
+    </section>
+    <section className="executive-report-panel">
+      <div className="executive-report-section-head"><div><span className="executive-report-kicker">PERFORMANCE OVER TIME</span><h3>Monthly trend</h3><p>Aggregated {analysis.trend?.metric || "metric"} by month using {analysis.trend?.date_field || "the detected date field"}.</p></div>
+      {change && <div className={"executive-change executive-change-"+change.direction}><b>{change.direction==="up"?"↗":change.direction==="down"?"↘":"→"} {change.percentage_change == null ? "N/A" : fmtMetric(change.percentage_change)+"%"}</b><small>{change.previous_period} → {change.period}</small><span>Period-over-period</span></div>}</div>
+      {series.length > 1 ? <div className="executive-trend-wrap"><svg className="executive-trend-svg" viewBox="0 0 800 250" role="img" aria-label="Monthly metric trend line">
+        {[45,85,125,165,205].map(y=><line key={y} x1="25" x2="775" y1={y} y2={y} className="executive-chart-grid"/>)}<polygon points={"35,205 "+line+" 765,205"} className="executive-trend-area"/><polyline points={line} className="executive-trend-line"/>
+        {points.map((p,i)=><g key={i}><circle cx={p.x} cy={p.y} r="4" className="executive-trend-dot"/><title>{series[i].period}: {fmtMetric(series[i].value)}</title></g>)}
+      </svg><div className="executive-trend-labels">{series.map((p,i)=><span key={i}>{p.period}</span>)}</div></div> : <div className="executive-report-empty">A reliable date field and at least two periods are needed to display a trend.</div>}
+      <div className="executive-period-comparison">{change && <><div><small>Previous period</small><b>{fmtMetric(change.previous_value)}</b><span>{change.previous_period}</span></div><div><small>Latest period</small><b>{fmtMetric(change.current_value)}</b><span>{change.period}</span></div><div><small>Absolute change</small><b>{fmtMetric(change.absolute_change)}</b><span>{change.direction==="up"?"Increase":change.direction==="down"?"Decrease":"No change"}</span></div></>}</div>
+      <div className="executive-extremes">{analysis.trend?.peak_period && <div><span>▲ Peak period</span><b>{analysis.trend.peak_period.period}</b><strong>{fmtMetric(analysis.trend.peak_period.value)}</strong></div>}{analysis.trend?.lowest_period && <div><span>▼ Lowest period</span><b>{analysis.trend.lowest_period.period}</b><strong>{fmtMetric(analysis.trend.lowest_period.value)}</strong></div>}</div>
+    </section>
+    {(analysis.performance_breakdowns || []).length > 0 && <section className="executive-report-panel"><div className="executive-report-section-head"><div><span className="executive-report-kicker">BUSINESS DRIVERS</span><h3>Performance by segment</h3><p>Leading dimensions ranked by aggregated metric.</p></div></div><div className="executive-breakdowns">{analysis.performance_breakdowns.map((item,i)=>{const leaders=item.leaders||[],maxValue=Math.max(1,...leaders.map(x=>Math.max(0,Number(x.value||0))));return <article key={i}><h4>{item.dimension}</h4>{leaders.map((leader,j)=><div className="executive-breakdown-row" key={j}><div><span>{leader.name}</span><b>{fmtMetric(leader.value)}</b></div><i><em style={{width:Math.max(0,Number(leader.value||0))/maxValue*100+"%"}}/></i></div>)}</article>})}</div></section>}
+    <section className="executive-report-panel"><div className="executive-report-section-head"><div><span className="executive-report-kicker">WHAT MANAGEMENT SHOULD KNOW</span><h3>Key findings</h3></div></div><div className="executive-findings">{(analysis.key_findings||[]).map((finding,i)=><article key={i}><span>{String(i+1).padStart(2,"0")}</span><div><h4>{finding.title}</h4><p>{finding.detail}</p></div></article>)}</div></section>
+    <section className="executive-report-panel executive-recommendations"><div className="executive-report-section-head"><div><span className="executive-report-kicker">ACTION PLAN</span><h3>Management recommendations</h3><p>Suggested follow-ups based on descriptive analysis.</p></div></div><ol>{(analysis.management_recommendations||[]).map((item,i)=><li key={i}><span>{i+1}</span><p>{item}</p></li>)}</ol></section>
+    {analysis.analysis_notes?.length>0 && <details className="executive-methodology"><summary>Methodology & limitations</summary><ul>{analysis.analysis_notes.map((note,i)=><li key={i}>{note}</li>)}</ul></details>}
+  </div>;
+}
+
 export default function ReportsWorkspace({ dataset }) {
   const [reports, setReports] = useState([]);
   const [title, setTitle] = useState("");
@@ -139,7 +176,7 @@ export default function ReportsWorkspace({ dataset }) {
 
     {activeReport && <section className="report-viewer panel-card">
       <div className="report-viewer-heading"><div><div className="report-section-kicker">REPORT PREVIEW</div><h2>{activeReport.title || "Untitled report"}</h2><p>{titleCase(activeReport.report_type || reportContent.report_type || "summary")} · Generated {fmtDate(activeReport.created_at || reportContent.generated_at)}</p></div><button className="report-close-button" onClick={() => setActiveReport(null)}>Close ×</button></div>
-      {reportContent.executive_analysis && <div className="report-content-section"><div className="report-content-title"><span>↗</span><div><h3>Executive business analysis</h3><p>Management-facing performance trends, findings, and recommendations.</p></div></div><ReportValue value={reportContent.executive_analysis}/></div>}
+      {reportContent.executive_analysis && <div className="report-content-section"><div className="report-content-title"><span>↗</span><div><h3>Executive business analysis</h3><p>Management-facing performance trends, findings, and recommendations.</p></div></div><ExecutiveReportView analysis={reportContent.executive_analysis}/></div>}
       {!reportContent.executive_analysis && <>
       <div className="report-overview-kpis">
         {[["Rows",overview.row_count],["Columns",overview.column_count],["Numeric fields",overview.numeric_column_count],["Missing cells",overview.missing_cells],["Duplicate rows",overview.duplicate_rows]].map(([label,value]) => <div key={label}><small>{label}</small><strong>{fmtNum(value)}</strong></div>)}
