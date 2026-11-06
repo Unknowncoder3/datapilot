@@ -612,3 +612,61 @@
 /* Phase 10 — anomaly review workflow */
 .anomaly-review-toolbar{display:flex;align-items:center;gap:10px}.anomaly-review-toolbar select{max-width:230px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 10px;font-size:10px}.anomaly-review-title{display:flex;align-items:center;justify-content:space-between;gap:12px}.anomaly-review-title h4{flex:1}.anomaly-review-status{font-size:9px;font-weight:800;text-transform:capitalize;letter-spacing:.4px;padding:5px 8px;border-radius:6px;white-space:nowrap;border:1px solid var(--border);color:var(--muted)}.status-open{color:#8fa1ff;background:#7c8cff14}.status-investigating{color:#e8b45e;background:#e8b45e14;border-color:#e8b45e38}.status-resolved{color:#45d6bd;background:#45d6bd14;border-color:#45d6bd38}.status-dismissed{color:var(--muted);background:var(--surface)}.anomaly-review-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.anomaly-review-actions button{border:1px solid #7c8cff45;background:#7c8cff13;color:var(--accent);border-radius:7px;padding:7px 10px;font-size:9px;font-weight:800;cursor:pointer}.anomaly-review-actions button:hover{background:#7c8cff25}.anomaly-review-actions button.muted-action{border-color:var(--border);background:transparent;color:var(--muted)}.anomaly-review-actions button.muted-action:hover{background:var(--surface)}
 @media(max-width:700px){.anomaly-review-toolbar{align-items:flex-start;flex-direction:column;width:100%}.anomaly-review-toolbar select{width:100%;max-width:none}.anomaly-review-title{align-items:flex-start;flex-direction:column}}
+
+/* Phase 12 — automated reports workspace */
+.reports-page{display:flex;flex-direction:column;gap:18px}
+.reports-heading{align-items:center;gap:20px}
+.report-dataset-chip{display:flex;flex-direction:column;gap:5px;min-width:220px;max-width:320px;padding:13px 15px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+.report-dataset-chip small,.report-section-kicker{font-size:8px;font-weight:900;letter-spacing:1.25px;color:var(--accent)}
+.report-dataset-chip strong{font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.report-dataset-chip span{font-size:9px;color:var(--muted)}
+.reports-top-grid{display:grid;grid-template-columns:minmax(280px,.85fr) minmax(0,1.25fr);gap:16px;align-items:stretch}
+.report-generator,.report-library{padding:20px;min-width:0}
+.report-generator h2,.report-library h2,.report-viewer-heading h2{margin:6px 0;font:700 18px "Space Grotesk",sans-serif;letter-spacing:-.4px;color:var(--text)}
+.report-generator>p,.report-library-heading p,.report-viewer-heading p{font-size:10px;line-height:1.6;color:var(--muted);margin:0 0 16px}
+.report-form-label{display:grid;gap:7px;margin:15px 0;color:var(--text);font-size:10px;font-weight:800}
+.report-form-label>span{font-size:8px;color:var(--muted);font-weight:600}
+.report-form-label input{width:100%;border:1px solid var(--border);border-radius:9px;padding:10px 12px;background:var(--surface2);color:var(--text);font-size:11px;outline:none}
+.report-form-label input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 13%,transparent)}
+.report-type-options{display:grid;gap:9px;margin:14px 0}
+.report-type-options>label{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer;transition:border-color .15s,background .15s}
+.report-type-options>label.selected{border-color:color-mix(in srgb,var(--accent) 60%,var(--border));background:color-mix(in srgb,var(--accent) 9%,var(--surface2))}
+.report-type-options input{accent-color:var(--accent)}
+.report-type-option-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:8px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:16px}
+.report-type-options strong,.report-type-options small{display:block}.report-type-options strong{font-size:11px;color:var(--text)}.report-type-options small{margin-top:3px;font-size:9px;color:var(--muted);line-height:1.4}
+.report-generate-button{display:flex;justify-content:center;align-items:center;gap:8px;width:100%;min-height:40px;margin-top:10px}
+.report-generate-button:disabled,.report-refresh-button:disabled{opacity:.6;cursor:wait}
+.report-button-spinner{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:report-spin .7s linear infinite}@keyframes report-spin{to{transform:rotate(360deg)}}
+.report-library-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.report-count{display:grid;place-items:center;min-width:30px;height:30px;padding:0 8px;border-radius:9px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:11px;font-weight:900}
+.report-history-list{display:grid;gap:9px}
+.report-history-card{display:flex;align-items:center;gap:10px;padding:11px;border:1px solid var(--border);border-radius:10px;background:var(--surface2);min-width:0}
+.report-history-icon{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:8px;background:#45d6bd17;color:#45d6bd;font-size:16px}
+.report-history-main{flex:1;min-width:0}.report-history-main>strong{display:block;font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.report-history-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:5px;font-size:8px;color:var(--muted)}
+.report-type-tag{border-radius:5px;padding:3px 6px;font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;background:#7889ff17;color:#9ba8ff}.report-type-full{background:#45d6bd17;color:#45d6bd}
+.report-history-actions{display:flex;align-items:center;gap:5px;flex:none}
+.report-action-button,.report-delete-button,.report-refresh-button,.report-close-button{border:1px solid var(--border);border-radius:7px;padding:6px 9px;background:var(--surface);color:var(--text);font-size:9px;font-weight:800;cursor:pointer}
+.report-action-button:hover,.report-refresh-button:hover,.report-close-button:hover{border-color:var(--accent);color:var(--accent)}
+.report-delete-button{padding:4px 8px;font-size:15px;color:#fb7185}.report-delete-button:hover{border-color:#fb7185;background:#fb718510}
+.report-refresh-button{width:100%;margin-top:12px;padding:8px;color:var(--muted)}
+.report-empty-state{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:7px;min-height:130px;text-align:center;color:var(--muted);font-size:10px}
+.report-empty-state>div{font-size:24px;color:var(--accent)}.report-empty-state strong{font-size:11px;color:var(--text)}
+.report-alert{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid;border-radius:9px;font-size:10px}
+.report-alert button{border:0;background:transparent;color:inherit;font-size:16px}.report-alert-error{border-color:#fb718535;background:#fb718510;color:#fb8798}.report-alert-success{border-color:#45d6bd35;background:#45d6bd10;color:#45d6bd}
+.report-viewer{padding:22px;display:grid;gap:18px}
+.report-viewer-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}
+.report-overview-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px}
+.report-overview-kpis>div{padding:12px;border:1px solid var(--border);border-radius:9px;background:var(--surface2);min-width:0}
+.report-overview-kpis small,.report-overview-kpis strong{display:block}.report-overview-kpis small{font-size:8px;color:var(--muted);letter-spacing:.4px}.report-overview-kpis strong{margin-top:6px;font:700 17px "Space Grotesk",sans-serif;color:var(--text);overflow-wrap:anywhere}
+.report-data-tags{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:9px;color:var(--muted)}.report-data-tags b{padding:5px 8px;border-radius:6px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-weight:700}
+.report-content-section{padding:16px;border:1px solid var(--border);border-radius:11px;background:var(--surface2);min-width:0}
+.report-content-title{display:flex;align-items:center;gap:10px;margin-bottom:13px}.report-content-title>span{display:grid;place-items:center;width:31px;height:31px;border-radius:8px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:15px}
+.report-content-title h3{margin:0;font:700 13px "Space Grotesk",sans-serif;color:var(--text)}.report-content-title p{margin:3px 0 0;font-size:9px;color:var(--muted)}
+.report-object{display:grid;gap:6px;min-width:0}.report-object-row{display:grid;grid-template-columns:minmax(120px,.55fr) minmax(0,1.45fr);gap:12px;padding:8px 10px;border:1px solid var(--border);border-radius:7px;background:var(--surface)}
+.report-object-key{font-size:9px;font-weight:700;color:var(--muted)}.report-object-value{font-size:10px;color:var(--text);min-width:0;overflow-wrap:anywhere}
+.report-chips{display:flex;flex-wrap:wrap;gap:5px}.report-chips>span{padding:4px 7px;border:1px solid var(--border);border-radius:5px;font-size:9px;background:var(--surface2)}
+.report-nested-list{display:grid;gap:6px}.report-nested-item{padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--surface)}.report-nested-list>small,.report-muted{font-size:9px;color:var(--muted)}
+@media(max-width:900px){.reports-top-grid{grid-template-columns:1fr}.report-overview-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){.reports-heading{align-items:flex-start;flex-direction:column}.report-dataset-chip{width:100%;max-width:none}.report-generator,.report-library,.report-viewer{padding:14px}.report-history-card{align-items:flex-start;flex-wrap:wrap}.report-history-actions{margin-left:auto}.report-overview-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.report-object-row{grid-template-columns:1fr;gap:4px}.report-viewer-heading{flex-direction:column}.report-close-button{align-self:flex-start}}
+@media(prefers-reduced-motion:reduce){.report-button-spinner{animation:none}.report-type-options>label{transition:none}}
