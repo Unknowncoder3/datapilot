@@ -9,12 +9,36 @@ function ReportValue({ value }) {
   if (value == null || typeof value !== "object") return <span>{fmtNum(value)}</span>;
   if (Array.isArray(value)) {
     if (!value.length) return <span className="report-muted">No values</span>;
-    if (value.every((item) => item == null || typeof item !== "object")) return <div className="report-chips">{value.map((item, i) => <span key={i}>{fmtNum(item)}</span>)}</div>;
-    return <div className="report-nested-list">{value.slice(0, 30).map((item, i) => <div className="report-nested-item" key={i}><ReportValue value={item}/></div>)}{value.length > 30 && <small>Showing first 30 entries</small>}</div>;
+    if (value.every((item) => item == null || typeof item !== "object")) return <p>{value.map(fmtNum).join(", ")}</p>;
+    if (value.every((item) => item && typeof item === "object" && !Array.isArray(item))) {
+      const columns = Object.keys(value[0] || {});
+      return <div className="report-sample-table-wrap"><table className="report-sample-table"><thead><tr>{columns.map((column) => <th key={column}>{column}</th>)}</tr></thead><tbody>{value.slice(0, 20).map((row, index) => <tr key={index}>{columns.map((column) => <td key={column}>{row[column] == null ? "—" : String(row[column])}</td>)}</tr>)}</tbody></table>{value.length > 20 && <p className="report-muted">Showing first 20 records.</p>}</div>;
+    }
+    return <div className="report-narrative-list">{value.slice(0, 30).map((item, i) => <div className="report-narrative-item" key={i}><ReportValue value={item}/></div>)}</div>;
   }
   const entries = Object.entries(value);
   if (!entries.length) return <span className="report-muted">Empty</span>;
-  return <div className="report-object">{entries.map(([key, item]) => <div className="report-object-row" key={key}><span className="report-object-key">{titleCase(key)}</span><div className="report-object-value"><ReportValue value={item}/></div></div>)}</div>;
+  if (value.matrix && Array.isArray(value.columns)) {
+    const pairs = [];
+    for (let i = 0; i < value.columns.length; i += 1) for (let j = i + 1; j < value.columns.length; j += 1) {
+      const left = value.columns[i], right = value.columns[j], coefficient = value.matrix[left]?.[right] ?? value.matrix[right]?.[left];
+      if (typeof coefficient === "number" && Number.isFinite(coefficient)) {
+        const abs = Math.abs(coefficient), strength = abs >= .7 ? "strong" : abs >= .4 ? "moderate" : abs >= .2 ? "weak" : "very weak", direction = coefficient > 0 ? "positive" : coefficient < 0 ? "negative" : "zero";
+        pairs.push(<p key={left+"-"+right}>{left} and {right} have a {strength} {direction} correlation (coefficient {fmtNum(coefficient)}). Correlation indicates association, not causation.</p>);
+      }
+    }
+    return <div className="report-narrative-copy"><p>Correlation was calculated using the {titleCase(value.method || "pearson")} method.</p>{pairs.length ? pairs : <p>There are not enough numeric columns to calculate pairwise correlations.</p>}</div>;
+  }
+  if (entries.some(([key]) => ["data_type","count","missing","unique","type"].includes(key))) {
+    const type = value.type || value.data_type || "unspecified";
+    const intro = `This field is classified as ${String(type).replaceAll("_"," ")} data. It has ${fmtNum(value.count)} populated values, ${fmtNum(value.missing)} missing values, and ${fmtNum(value.unique)} distinct values.`;
+    const details = type === "numeric" ? [value.mean != null && "mean "+fmtNum(value.mean),value.median != null && "median "+fmtNum(value.median),value.min != null && value.max != null && "range "+fmtNum(value.min)+" to "+fmtNum(value.max),value.std != null && "standard deviation "+fmtNum(value.std),value.q1 != null && value.q3 != null && "middle 50% from "+fmtNum(value.q1)+" to "+fmtNum(value.q3)].filter(Boolean).join("; ")
+      : type === "categorical" && value.top_value != null ? "Most frequent value: “"+value.top_value+"” ("+fmtNum(value.top_frequency)+" occurrences)."
+      : type === "datetime" && (value.minimum || value.maximum) ? "Observed date range: "+(value.minimum || "—")+" to "+(value.maximum || "—")+"."
+      : type === "boolean" && value.true_count != null ? fmtNum(value.true_count)+" true and "+fmtNum(value.false_count)+" false values." : "";
+    return <div className="report-narrative-copy"><p>{intro}</p>{details && <p>{type === "numeric" ? "Distribution details: "+details+"." : details}</p>}</div>;
+  }
+  return <div className="report-narrative-list">{entries.map(([key,item]) => <p className="report-narrative-paragraph" key={key}><strong>{titleCase(key)}:</strong> <ReportValue value={item}/></p>)}</div>;
 }
 
 function ReportCard({ report, onOpen, onDelete }) {
