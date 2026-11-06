@@ -52,7 +52,7 @@ function ReportCard({ report, onOpen, onDelete }) {
 export default function ReportsWorkspace({ dataset }) {
   const [reports, setReports] = useState([]);
   const [title, setTitle] = useState("");
-  const [reportType, setReportType] = useState("summary");
+  const [reportType, setReportType] = useState("executive");
   const [activeReport, setActiveReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -126,7 +126,7 @@ export default function ReportsWorkspace({ dataset }) {
         <div className="report-section-kicker">CREATE NEW</div><h2>Build a report</h2><p>Choose the depth of analysis, then save it to your report library.</p>
         <label className="report-form-label">Report title <span>Optional</span><input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder={`${datasetLabel} analysis report`}/></label>
         <div className="report-type-options">
-          <label className={reportType === "summary" ? "selected" : ""}><input type="radio" name="reportType" value="summary" checked={reportType === "summary"} onChange={() => setReportType("summary")}/><span className="report-type-option-icon">✧</span><span><strong>Summary</strong><small>Overview, data quality, descriptive stats</small></span></label>
+          <label className={reportType === "executive" ? "selected" : ""}><input type="radio" name="reportType" value="executive" checked={reportType === "executive"} onChange={() => setReportType("executive")}/><span className="report-type-option-icon">↗</span><span><strong>Executive business report</strong><small>Management summary, trends, ups and downs, business drivers, findings and recommended actions</small></span></label><label className={reportType === "summary" ? "selected" : ""}><input type="radio" name="reportType" value="summary" checked={reportType === "summary"} onChange={() => setReportType("summary")}/><span className="report-type-option-icon">✧</span><span><strong>Technical summary</strong><small>Overview, data quality, descriptive stats</small></span></label>
           <label className={reportType === "full" ? "selected" : ""}><input type="radio" name="reportType" value="full" checked={reportType === "full"} onChange={() => setReportType("full")}/><span className="report-type-option-icon">▤</span><span><strong>Full report</strong><small>Summary plus correlations and row preview</small></span></label>
         </div>
         <button className="primary-button report-generate-button" type="submit" disabled={generating}>{generating ? <><span className="report-button-spinner"/>Generating report…</> : "✦ Generate report"}</button>
@@ -139,6 +139,7 @@ export default function ReportsWorkspace({ dataset }) {
 
     {activeReport && <section className="report-viewer panel-card">
       <div className="report-viewer-heading"><div><div className="report-section-kicker">REPORT PREVIEW</div><h2>{activeReport.title || "Untitled report"}</h2><p>{titleCase(activeReport.report_type || reportContent.report_type || "summary")} · Generated {fmtDate(activeReport.created_at || reportContent.generated_at)}</p></div><button className="report-close-button" onClick={() => setActiveReport(null)}>Close ×</button></div>
+      {reportContent.executive_analysis && <div className="report-content-section"><div className="report-content-title"><span>↗</span><div><h3>Executive business analysis</h3><p>Management-facing performance trends, findings, and recommendations.</p></div></div><ReportValue value={reportContent.executive_analysis}/></div>}
       <div className="report-overview-kpis">
         {[["Rows",overview.row_count],["Columns",overview.column_count],["Numeric fields",overview.numeric_column_count],["Missing cells",overview.missing_cells],["Duplicate rows",overview.duplicate_rows]].map(([label,value]) => <div key={label}><small>{label}</small><strong>{fmtNum(value)}</strong></div>)}
       </div>
