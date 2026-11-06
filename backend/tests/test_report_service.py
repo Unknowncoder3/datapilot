@@ -80,6 +80,8 @@ def test_build_executive_report_includes_management_analysis(tmp_path):
     assert len(analysis["trend"]["series"]) == 2
     assert analysis["trend"]["period_change"]["direction"] == "down"
     assert analysis["trend"]["period_change"]["absolute_change"] == -10.0
+    assert "-12.50%" in analysis["key_findings"][0]["detail"]
+    assert "-10.00" in analysis["key_findings"][0]["detail"]
     assert analysis["key_findings"]
     assert analysis["management_recommendations"]
 
